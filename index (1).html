@@ -1,0 +1,1164 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Gia Phả Số</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --maroon:#8a1818; --maroon-d:#6f1212; --maroon-l:#a83030;
+  --gold:#c9981f; --gold-l:#e0b53f; --gold-soft:#f3e6c4;
+  --cream:#fbf2e9; --cream-2:#f6ead9;
+  --card:#ffffff; --line:#efe1c9;
+  --ink:#5a3a22; --ink-soft:#8a6a4a; --muted:#b89a6f;
+  --shadow:0 6px 20px rgba(110,40,20,.08);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  background:var(--cream);color:var(--ink);padding-bottom:78px;
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(201,152,31,.04) 29px);}
+h1,h2,h3{margin:0}
+button{font-family:inherit;cursor:pointer;border:none}
+input,select,textarea{font-family:inherit;font-size:15px}
+
+header{position:sticky;top:0;z-index:30;background:linear-gradient(180deg,var(--maroon-l),var(--maroon));
+  color:#fff;padding:14px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(80,20,10,.25)}
+.logo{width:44px;height:44px;border-radius:50%;flex:none;
+  background:radial-gradient(circle at 35% 30%,var(--gold-l),var(--gold));
+  display:flex;align-items:center;justify-content:center;font-size:24px}
+.brand h1{font-size:20px;letter-spacing:.3px}
+.brand p{margin:1px 0 0;font-size:12px;opacity:.85;font-style:italic}
+.add-btn{margin-left:auto;background:linear-gradient(180deg,var(--gold-l),var(--gold));color:#5a3a08;
+  font-weight:700;padding:10px 16px;border-radius:24px;font-size:14px;box-shadow:0 3px 8px rgba(0,0,0,.18);white-space:nowrap}
+.add-btn:active{transform:translateY(1px)}
+
+main{max-width:980px;margin:0 auto;padding:18px 16px 8px}
+.section-title{display:flex;align-items:center;gap:14px;margin:6px 2px 14px;color:var(--maroon);font-size:19px;font-weight:800}
+.section-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--gold),transparent)}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--gold-soft);border-radius:16px;padding:18px 8px;text-align:center;box-shadow:var(--shadow)}
+.stat .num{font-size:30px;font-weight:800;color:var(--maroon)}
+.stat .lbl{font-size:13px;color:var(--ink-soft);margin-top:2px}
+
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.pill{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:9px 16px;font-weight:700;
+  font-size:14px;color:var(--maroon);box-shadow:var(--shadow);display:flex;align-items:center;gap:7px}
+.pill:active{transform:translateY(1px)}
+
+.empty{text-align:center;color:var(--ink-soft);padding:48px 16px}
+.empty .ico{font-size:46px}
+.empty .big{color:var(--maroon);font-size:17px;margin-top:8px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
+
+/* family tree */
+ul.tree-root,.tree-root ul{list-style:none;margin:0;padding:0}
+.tree-root ul{margin-left:16px;padding-left:14px;border-left:2px solid var(--line)}
+.tree-root li{position:relative;margin:8px 0}
+.tree-root ul>li::before{content:"";position:absolute;left:-14px;top:24px;width:12px;height:2px;background:var(--line)}
+.node-row{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);
+  border-left:4px solid var(--gold);border-radius:12px;padding:8px 10px;box-shadow:var(--shadow)}
+.node-row.deceased{border-left-color:var(--ink-soft)}
+.node-row .av{width:38px;height:38px;border-radius:50%;background:var(--cream-2);display:flex;align-items:center;
+  justify-content:center;font-size:18px;flex:none;overflow:hidden}
+.ninfo{flex:1;min-width:0}
+.node-row .nm{font-weight:700;color:var(--maroon);font-size:15px}
+.node-row .meta{font-size:12px;color:var(--ink-soft)}
+.doi{font-size:10px;color:#8a6708;font-weight:700;background:var(--gold-soft);padding:1px 6px;border-radius:8px;vertical-align:middle;margin-left:4px}
+.spouse{margin-left:6px;color:var(--ink-soft)}
+.nacts{display:flex;gap:4px;flex:none}
+img.av{object-fit:cover;display:block}
+.grp{margin-bottom:14px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--card);box-shadow:var(--shadow)}
+.grp-h{display:flex;align-items:center;gap:8px;padding:12px 14px;background:linear-gradient(180deg,#fff,var(--cream-2));cursor:pointer;font-weight:800;color:var(--maroon)}
+.grp-h .caret{color:var(--gold);font-size:13px;width:14px}
+.grp-t{flex:1}
+.grp-n{font-size:12px;font-weight:600;color:var(--ink-soft)}
+.grp ul.tree-root{padding:10px 14px 14px}
+.caret-btn{background:none;border:none;color:var(--gold);font-size:13px;padding:2px 4px;flex:none;cursor:pointer}
+.caret-sp{display:inline-block;width:14px;flex:none}
+.kcount{font-size:11px;color:var(--ink-soft);font-weight:600}
+.seg{display:flex;gap:6px;margin:0 0 12px;background:var(--cream-2);border:1px solid var(--line);border-radius:12px;padding:4px}
+.seg button{flex:1;border:none;background:transparent;padding:8px;border-radius:9px;font-weight:700;color:var(--ink-soft);font-size:13px;cursor:pointer}
+.seg button.on{background:var(--maroon);color:#fff;box-shadow:var(--shadow)}
+.chart-block{margin-bottom:18px}
+.chart-title{font-weight:800;color:var(--maroon);margin:0 2px 8px;font-size:16px}
+.chart-scroll{overflow:auto;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:var(--shadow);padding:16px;-webkit-overflow-scrolling:touch}
+.chart{display:inline-block;transform-origin:top left;transition:transform .15s}
+.orgtree ul{position:relative;padding-top:20px;display:flex;justify-content:center;margin:0;list-style:none}
+.orgtree li{display:flex;flex-direction:column;align-items:center;position:relative;padding:20px 6px 0;list-style:none}
+.orgtree li::before,.orgtree li::after{content:'';position:absolute;top:0;right:50%;border-top:2px solid var(--gold);width:50%;height:20px}
+.orgtree li::after{right:auto;left:50%;border-left:2px solid var(--gold)}
+.orgtree li:only-child::after,.orgtree li:only-child::before{display:none}
+.orgtree li:only-child{padding-top:0}
+.orgtree li:first-child::before,.orgtree li:last-child::after{border:0 none}
+.orgtree li:last-child::before{border-right:2px solid var(--gold)}
+.orgtree ul ul::before{content:'';position:absolute;top:0;left:50%;border-left:2px solid var(--gold);width:0;height:20px}
+.orgtree>ul{padding-top:0}.orgtree>ul>li{padding-top:0}
+.obox{display:inline-block;border:2px solid var(--gold);border-radius:9px;background:#fff;padding:6px 10px;min-width:118px;max-width:180px;cursor:pointer;text-align:center;white-space:normal}
+.obox.root{background:linear-gradient(180deg,var(--maroon-l),var(--maroon));border-color:var(--maroon-d)}
+.obox.dead{border-color:var(--ink-soft)}
+.obox .ob-n{font-weight:700;color:var(--maroon);font-size:12.5px;line-height:1.25}
+.obox.root .ob-n{color:#fff;font-size:14px}
+.obox .ob-s{color:var(--ink-soft);font-size:11px;line-height:1.2}
+.obox .ob-d{color:#8a6708;font-size:10px;font-weight:700;margin-top:2px}
+
+.search{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
+  border-radius:28px;padding:12px 18px;box-shadow:var(--shadow)}
+.search input{border:none;outline:none;flex:1;background:transparent;color:var(--ink)}
+.search .mag{font-size:18px}
+
+.mlist{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.mrow{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:var(--shadow)}
+.mrow .av{width:44px;height:44px;border-radius:50%;background:var(--cream-2);display:flex;align-items:center;justify-content:center;font-size:20px;flex:none;overflow:hidden}
+.mrow .nm{font-weight:700;color:var(--maroon)}
+.mrow .meta{font-size:13px;color:var(--ink-soft)}
+.mrow .acts{margin-left:auto;display:flex;gap:6px}
+.icon-btn{background:var(--cream-2);border-radius:9px;padding:7px 9px;font-size:14px;color:var(--ink)}
+.icon-btn.danger{color:#a12020}
+
+.clock{background:linear-gradient(180deg,var(--maroon-l),var(--maroon));color:#fff;border-radius:18px;text-align:center;padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
+.clock .t{font-size:34px;font-weight:800;letter-spacing:1px}
+.clock .d{opacity:.85;margin-top:2px}
+.clock .lunar{font-size:14px;opacity:.95;margin-top:4px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-head h2{color:var(--maroon);font-size:18px}
+.nav-arrow{background:var(--card);border:1px solid var(--line);border-radius:10px;width:38px;height:38px;font-size:18px;color:var(--maroon)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .dow{text-align:center;font-weight:700;color:var(--gold);font-size:13px;padding:6px 0}
+.day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;
+  font-size:15px;color:var(--ink);cursor:pointer;position:relative;border:1px solid transparent}
+.day.out{color:var(--muted);opacity:.5}
+.day:hover{background:var(--cream-2)}
+.day.has::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--maroon);position:absolute;bottom:4px}
+.day.sel{outline:2px solid var(--maroon)}
+.day .sd{line-height:1.05}
+.day .ld{font-size:9.5px;line-height:1;color:var(--muted);margin-top:2px;font-weight:600}
+.day.ram .ld{color:#b8860b}.day.ram{background:#fbf3da}
+.day.mung1 .ld{color:var(--maroon)}.day.mung1{background:#f8efe2}
+.day.fest .ld{color:var(--maroon);font-weight:800}.day.fest{background:#f7e3e3}
+.day.gio::after{background:#6f1212}
+.day.today{background:var(--gold-soft)!important;border-color:var(--gold)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px;color:var(--ink-soft);margin:0 2px 8px;align-items:center}
+.legend i.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.legend .dot.mung{background:#e9d7bf;border:1px solid var(--maroon)}
+.legend .dot.ram{background:#f3e3b0;border:1px solid #b8860b}
+.legend .dot.fest{background:#f3d2d2;border:1px solid var(--maroon)}
+.legend .dot.gio{background:#6f1212}
+
+.ev-list{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.ev{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--gold);border-radius:12px;padding:12px;box-shadow:var(--shadow)}
+.ev .when{font-size:13px;color:var(--gold);font-weight:700;min-width:78px}
+.ev .ttl{font-weight:700;color:var(--maroon)}
+.ev .desc{font-size:13px;color:var(--ink-soft);margin-top:2px}
+.ev .acts{margin-left:auto;display:flex;gap:6px;flex:none}
+.badge{background:var(--gold-soft);color:#8a6708;font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px}
+
+.clan-banner{background:linear-gradient(135deg,var(--maroon-d),var(--maroon-l));color:#fff;border-radius:18px;padding:18px 20px;margin-bottom:14px;box-shadow:var(--shadow)}
+.clan-banner h2{font-size:20px}
+.clan-banner p{margin:4px 0 0;opacity:.85;font-size:13px}
+.clan-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:14px}
+.clan{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);text-align:center;cursor:pointer;transition:transform .12s}
+.clan:active{transform:scale(.97)}
+.clan .seal{width:48px;height:48px;margin:0 auto 8px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--maroon-l),var(--maroon));color:#fff;font-size:22px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.clan .cn{font-weight:800;color:var(--maroon);font-size:16px}
+.clan .cm{font-size:12px;color:var(--ink-soft);margin-top:2px}
+table.tq{width:100%;border-collapse:collapse;font-size:14px}
+table.tq th,table.tq td{border:1px solid var(--line);padding:7px 10px;text-align:left}
+table.tq th{background:var(--gold-soft);color:var(--maroon)}
+table.tq tr:nth-child(even) td{background:#fdf8f0}
+
+.acct-card{max-width:420px;margin:24px auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow)}
+.acct-card h2{color:var(--maroon);text-align:center;font-size:20px;margin-bottom:4px}
+.acct-card .sub{text-align:center;color:var(--ink-soft);font-size:13px;margin-bottom:18px}
+.tabs{display:flex;background:var(--cream-2);border-radius:12px;padding:4px;margin-bottom:18px}
+.tabs button{flex:1;padding:9px;border-radius:9px;background:transparent;color:var(--ink-soft);font-weight:700;font-size:14px}
+.tabs button.on{background:var(--card);color:var(--maroon);box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.profile{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.profile .big-av{width:78px;height:78px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--gold-l),var(--gold));display:flex;align-items:center;justify-content:center;font-size:38px}
+
+label{display:block;font-weight:700;color:var(--ink);font-size:14px;margin:12px 0 5px}
+.req{color:var(--maroon)}
+input.f,select.f,textarea.f{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:11px;background:var(--cream);color:var(--ink);outline:none}
+input.f:focus,select.f:focus,textarea.f:focus{border-color:var(--gold);background:#fff}
+textarea.f{min-height:84px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:8px}
+.primary{width:100%;background:linear-gradient(180deg,var(--maroon-l),var(--maroon));color:#fff;font-weight:800;padding:14px;border-radius:12px;font-size:16px;margin-top:18px}
+.primary:active{transform:translateY(1px)}
+.ghost{width:100%;background:var(--cream-2);color:var(--ink);font-weight:700;padding:13px;border-radius:12px;font-size:15px;margin-top:10px}
+.note{font-size:12px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.5}
+
+.overlay{position:fixed;inset:0;background:rgba(40,15,10,.45);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto}
+.modal{background:#fff;border-radius:18px;width:100%;max-width:520px;padding:22px;box-shadow:0 20px 50px rgba(0,0,0,.3);animation:pop .18s ease}
+@keyframes pop{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.modal h2{text-align:center;color:#4a2bb0;font-size:21px;margin-bottom:14px}
+.pick-av{width:88px;height:88px;border-radius:50%;margin:0 auto 6px;border:3px solid var(--gold);background:var(--cream-2);display:flex;align-items:center;justify-content:center;font-size:40px;color:#4a2bb0;cursor:pointer;overflow:hidden}
+.pick-hint{text-align:center;color:var(--ink-soft);font-size:13px;margin-bottom:6px}
+
+nav.tabbar{position:fixed;bottom:0;left:0;right:0;z-index:30;background:#fff;border-top:1px solid var(--line);display:flex;box-shadow:0 -3px 12px rgba(0,0,0,.05)}
+nav.tabbar button{flex:1;background:none;padding:9px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-soft);font-size:11px;font-weight:600}
+nav.tabbar button .ti{font-size:21px}
+nav.tabbar button.on{color:var(--maroon);font-weight:800}
+
+.fab{position:fixed;right:18px;bottom:88px;z-index:31;width:58px;height:58px;border-radius:50%;background:linear-gradient(180deg,var(--maroon-l),var(--maroon));color:#fff;font-size:30px;box-shadow:0 8px 20px rgba(120,30,15,.4)}
+.fab:active{transform:scale(.94)}
+
+@media(max-width:560px){.brand h1{font-size:17px}.brand p{font-size:11px}.add-btn{padding:9px 12px;font-size:13px}.stat .num{font-size:24px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🌳</div>
+  <div class="brand"><h1>Gia Phả Số</h1><p>Kết nối tình thân – Giữ gìn nguồn cội</p></div>
+  <button class="add-btn" onclick="openMemberForm()">+ Thêm thành viên</button>
+</header>
+
+<main id="view"></main>
+<button class="fab" onclick="onFab()">+</button>
+<nav class="tabbar" id="tabbar"></nav>
+<div id="modal-root"></div>
+
+<script>
+/* ====== CẤU HÌNH CLOUD (Supabase) — dùng chung cho cả họ ======
+   Lấy ở Supabase → Settings → API. Dán vào 2 dòng dưới.
+   ĐỂ TRỐNG = app chạy bằng localStorage (dữ liệu riêng từng máy). */
+const SUPABASE_URL = "";
+const SUPABASE_KEY = "";
+/* ============================================================== */
+const CLOUD = !!(SUPABASE_URL && SUPABASE_KEY && typeof window!=='undefined' && window.supabase && window.supabase.createClient);
+const sb = CLOUD ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+const SHARED_KEYS=['members','events','accounts','phaky'];
+const Store={
+  mem:{},
+  async get(k,fb){
+    if(CLOUD){try{const {data,error}=await sb.from('app_data').select('value').eq('key',k).maybeSingle();
+      if(!error)return data?data.value:fb;}catch(e){}}
+    const shared=SHARED_KEYS.includes(k);
+    try{if(window.storage){const r=await window.storage.get(k,shared);return r?JSON.parse(r.value):fb;}}catch(e){}
+    try{const ls=localStorage.getItem('gps_'+k);if(ls!=null)return JSON.parse(ls);}catch(e){}
+    return (k in this.mem)?this.mem[k]:fb;},
+  async set(k,v){this.mem[k]=v;
+    if(CLOUD){try{const {error}=await sb.from('app_data').upsert({key:k,value:v,updated_at:new Date().toISOString()});
+      if(error)toast('Lỗi lưu cloud: '+(error.message||''));}catch(e){toast('Lỗi kết nối cloud');}}
+    const shared=SHARED_KEYS.includes(k);
+    try{if(window.storage){await window.storage.set(k,JSON.stringify(v),shared);}}catch(e){}
+    try{localStorage.setItem('gps_'+k,JSON.stringify(v));}catch(e){}}
+};
+
+/* ---------- state ---------- */
+let members=[],events=[],accounts=[],currentUser=null,pendingImport=null,undoStack=[];
+let tab='giapha',calRef=new Date(),calSel=null,memberSearch='',clanSearch='',acctMode='login',formAvatar='',phaky={},phaSearch='';
+let collapsedGroups=new Set(),collapsedNodes=new Set(),memberView='phai';
+
+const CLANS=[
+  {n:'Nguyễn',pct:'~38%',info:'Họ phổ biến nhất Việt Nam, gắn với triều Nguyễn (1802–1945).'},
+  {n:'Trần',pct:'~11%',info:'Gắn với triều Trần, ba lần đánh thắng quân Nguyên Mông.'},
+  {n:'Lê',pct:'~9.5%',info:'Triều Lê do Lê Lợi sáng lập sau khởi nghĩa Lam Sơn.'},
+  {n:'Phạm',pct:'~7%',info:'Họ lâu đời, phân bố rộng khắp ba miền.'},
+  {n:'Hoàng',pct:'~5%',info:'Miền Nam thường viết là Huỳnh do kiêng huý.'},
+  {n:'Huỳnh',pct:'~5%',info:'Biến thể của họ Hoàng, phổ biến ở miền Nam.'},
+  {n:'Phan',pct:'~4%',info:'Nhiều danh nhân: Phan Bội Châu, Phan Châu Trinh.'},
+  {n:'Vũ',pct:'~3.9%',info:'Gốc làng Mộ Trạch (Hải Dương) – "lò tiến sĩ".'},
+  {n:'Võ',pct:'~3.9%',info:'Biến thể của họ Vũ, phổ biến ở miền Trung – Nam.'},
+  {n:'Đặng',pct:'~2.1%',info:'Họ có truyền thống khoa bảng và võ tướng.'},
+  {n:'Bùi',pct:'~2%',info:'Phân bố nhiều ở đồng bằng Bắc Bộ.'},
+  {n:'Đỗ',pct:'~1.4%',info:'Họ cổ, gắn với nhiều dòng họ Nho học.'},
+  {n:'Hồ',pct:'~1.3%',info:'Gắn với triều Hồ (Hồ Quý Ly) và Chủ tịch Hồ Chí Minh.'},
+  {n:'Ngô',pct:'~1.3%',info:'Ngô Quyền – người mở nền độc lập sau 1000 năm Bắc thuộc.'},
+  {n:'Dương',pct:'~1%',info:'Họ lâu đời, nhiều chi phái khắp cả nước.'},
+  {n:'Lý',pct:'~0.5%',info:'Triều Lý do Lý Công Uẩn dời đô về Thăng Long.'},
+  {n:'Đinh',pct:'~1%',info:'Đinh Bộ Lĩnh dẹp loạn 12 sứ quân, lập nước Đại Cồ Việt.'},
+  {n:'Trương',pct:'~1%',info:'Phân bố rộng, nhiều ở miền Trung và Nam Bộ.'},
+  {n:'Lương',pct:'~0.5%',info:'Họ gắn với nhiều dòng khoa bảng đất Bắc.'},
+  {n:'Mai',pct:'~0.5%',info:'Mai Hắc Đế (Mai Thúc Loan) khởi nghĩa chống nhà Đường.'}
+];
+
+/* ---------- Phả ký (nội dung mặc định, sửa được trong app) ---------- */
+const DEFAULT_PHAKY={
+  tua:`Nhân nay đất nước thanh bình an lạc, để chuẩn bị cho Lễ Hội tổ 5 năm lần thứ 6 (1995–2025), chúng tôi tập trung huy động các chi phái trong tộc cung cấp thông tin các hệ đời để thiết lập bảng tông đồ dòng tộc và quyển tộc phả từ đời thứ 11 đến đời 17 để lại cho con cháu mai sau làm cơ sở; hằng năm vào ngày giỗ chạp tiếp tục ghi chép các đời con cháu sinh sau.
+
+Nước có quốc sử, nhà có gia phả. Để biết tổ tiên ta từ đâu mà đến, thứ tự Phái – Chi – Nhánh, lớp lang để xưng hô cho đúng đạo lý, phải biết tôn trọng giữ gìn những gì ông cha để lại, giữ gìn bản sắc văn hóa dân tộc, thuần phong mỹ tục; cốt lõi là phải duy trì cái tâm, cái đức hạnh con người, luôn nhớ về tiên tổ cội nguồn — đó là điều nhắc nhở đạo hiếu. Hằng năm vào dịp giỗ chạp, lễ tết, con cháu phải đoàn kết một lòng, trên thuận dưới hòa, tập trung tổ chức các nghi thức cúng bái, thể hiện cái tâm, cái đức, không cần rình rang linh đình.
+
+Chúng ta đang sống trong thời đại kim tiền, vật chất; nếu lơ đãng xa rời dòng họ thì sẽ bị mai một. Không sinh hoạt cùng tộc họ là nguy cơ suy đồi đạo đức. Cho nên dù giàu có hay nghèo hèn cũng phải chung lưng đấu cật, thương yêu, dìu dắt nhau cùng phát triển để tồn tại, phát huy truyền thống uống nước nhớ nguồn mà vượt qua những vướng mắc còn tồn tại và luôn hướng về cội nguồn.
+
+Thành tâm cầu nguyện cho con cháu tộc Nguyễn Như làng Câu Nhí đời đời bền vững.
+
+Điện Minh, ngày mồng một tháng hai năm Ất Tỵ (2025)
+
+Nguyễn Lượm đời thứ 12 biên soạn.
+Nguyễn Như Tuân và Nguyễn Như Minh đời thứ 12 lo in ấn.`,
+  hinhThanh:`Theo dòng lịch sử và các ghi chép của tộc họ Nguyễn trong nước, dòng họ Nguyễn khởi nguồn từ quận Trần Lưu, tỉnh Hà Đông, năm (924–979) quá nhập Nam Thiên.
+
+Ngài tổ dòng họ ta cách đây mấy ngàn năm ở ngoài Bắc đi vào xứ Thanh Hóa, tỉnh Thanh Hóa, khai cơ lập nghiệp, kiến canh ruộng đất được hơn 700 mẫu. Do phân chia ruộng đất không đều nên người con thứ là Nguyễn Phước Thức, vào năm Cảnh Long thứ 2, ngày 15 tháng 5, đi vào Quảng Trị, tỉnh (phủ) Hải Lăng, huyện Phú Lộc lập xã. Tại đây ngài Nguyễn Phước Thức đã sinh hạ được 5 trai 4 gái và đổi thành Nguyễn Như. Ở Quảng Trị ngài đã khai canh ruộng đất được hơn 600 mẫu, sinh ra các ngài: Nguyễn Như Thăng, Nguyễn Như Chức, Nguyễn Như Chương, Nguyễn Như Thuyên, Nguyễn Như Hoành và Nguyễn Như Thị Sự.
+
+Tháng tư nhuận năm Kỷ Tỵ (Vĩnh Dụ thứ 12), phụng chỉ dụ vào Nam. Năm Cảnh Hưng thứ nhất, ngày 15 tháng 5 năm 1740, ngài tổ để ngài Nguyễn Như Thuyên cùng các nàng dâu ở lại Quảng Trị canh tác ruộng đất, nuôi dưỡng cha mẹ; còn ngài Nguyễn Như Thăng và con trai là Nguyễn Như Đệ, cùng em là Nguyễn Như Chức với 4 con trai của ngài Như Chức — Như Triều (tức Công Tuấn), Như Hữu (tức Đình Nhơn), Như Hùng (tức Như Tác), Như Hạnh (tức Văn Xá) — đi thuyền từ Quảng Trị vào Quảng Nam, huyện Diên Khánh (nay là Điện Bàn). Ngài Nguyễn Như Thăng khai khẩn ruộng đất được hơn 600 mẫu, lập xã hiệu Câu Nhí cùng các tộc khác trong làng.
+
+Sau năm 1975, khi đất nước thanh bình, cuộc sống ổn định, qua thời gian đi tìm lại cội nguồn và thông tin từ dòng họ Nguyễn Quảng Nam – Đà Nẵng: ngài Nguyễn Như Chương vào khai canh lập nghiệp tại làng Châu Lâu, xã Điện Thọ, lập nhà thờ tộc; còn con ngài Nguyễn Như Chức là Nguyễn Như Đơn vào khai cơ lập nghiệp tại làng Trà Kiệu, huyện Duy Xuyên (tiền hiền tại Trà Kiệu).
+
+Vào những năm 2011–2017, tộc ta cùng Nguyễn Như Bằng An và Nguyễn Như Châu Lâu tổ chức hành hương đi tìm cội nguồn và đã tìm được tộc Nguyễn Như ở làng Câu Nhí, xã Hải Tân, huyện Hải Lăng, tỉnh Quảng Trị. Gặp nhau tay bắt mặt mừng, vui mừng vô kể.
+
+Tộc Nguyễn Như chúng ta có 3 chi hệ; do chiến tranh và thiên tai làm thất lạc phổ hệ, con cháu tìm về không ráp nối được trọn vẹn, nên tộc thống nhất ghi từ đời thứ 7 – thứ 8 như sau:
+1) Hệ Ông Nguyễn Như Đoan – bà Nguyễn Thị Thay — Đời thứ 8, Nhánh 3, Phái 2.
+2) Hệ Ông Nguyễn Như Thơ – bà Trương Thị Thừa — Đời thứ 7, Phái 3.
+3) Hệ Ông Nguyễn Như Muôn – bà Thị Vợ Nương — Đời thứ 7, Phái 4.
+
+Làng Câu Nhí được thủy tổ 6 tộc đầu tiên lập nên: Nguyễn – Đỗ – Trà – Thân – Trần – Ngô (Lục tộc), xưng theo thứ tự: Nhất Nguyễn, Nhì Thân, Tam Trần, Tứ Đỗ, Ngũ Ngô, Lục Trà; về sau có thêm các tộc khác như Lê, Tăng. Nhà thờ làng được xây tại xóm Miên Lả để thờ các vị tiền hiền, hậu hiền có công với làng, cúng vào ngày 16 tháng Giêng và 16 tháng 8 âm lịch hằng năm (Xuân Kỳ – Thu Tế).
+
+Riêng dòng họ Nguyễn Như chúng ta tổ chức giỗ chạp vào ngày mồng 10 tháng 3 âm lịch hằng năm. Từ năm 1995, lập tục 5 năm tổ chức Hội tổ một lần vào dịp Giỗ tổ Hùng Vương, nhằm hội tụ tôn thân huynh đệ, con cháu nội ngoại, giữ gìn tình huyết thống, thăm hỏi người ốm đau, người già từ 80 tuổi, khuyến học khuyến tài, phát huy truyền thống hiếu học của dòng tộc.
+
+(Phần tìm hiểu trên còn nhiều thiếu sót; kính mong anh chị em, con cháu trong gia tộc thông cảm và đóng góp thêm để cùng làm rõ quá trình hình thành và phát triển dòng họ Nguyễn Như. — Nguyễn Lượm)`,
+  nhaTho:`Năm Thành Thái thứ 3 (tháng 6 năm 1891), nhà thờ tộc ta được ông cha xây dựng tại xóm Nhà Bối – Mục Mã. Đến đời Vua Duy Tân thứ 7 (tháng 7 năm Quý Sửu 1913), nhà thờ được tu sửa lại. Nhưng đến đời Vua Bảo Đại, dòng sông Thu Bồn bị xói lở, nguy cơ làm sụp đổ từ đường. Tháng 3 năm 1932 (Nhâm Thân), ông cha ta di dời nhà thờ về xứ đất Thanh Sa, xóm Đồng Phú.
+
+Sau 30 năm (1963), do mưa nắng thời gian làm nhà thờ xuống cấp, ông cha ta tiếp tục đại trùng tu. Từ năm 1963 đến năm 1975 bị chiến tranh tàn phá từ đường, bom đạn làm hư hỏng dột nát; nên vào năm 1994 con cháu dốc tâm sức, tài lực đại trùng tu một lần nữa và khánh thành vào ngày 9 tháng 4 năm 1995 (nhằm ngày mồng 10 tháng 3 năm Ất Hợi).
+
+Sau 30 năm (2025), nhà thờ lại bị dột nát; con cháu quyết tâm đóng góp tiền tài, lợp lại mái nhà thờ với kinh phí hơn 300 triệu đồng để thờ phụng tổ tiên dòng họ.`
+};
+const TOC_QUAN=[['Bùi','Hà Đông'],['Cao','Bột Hải'],['Cù','Tùng Dương'],['Châu','Nhữ Nam'],['Chung','Nam Dương'],['Dương','Hoằng Nông'],['Đỗ','Kinh Triệu'],['Đoàn','Kinh Triệu'],['Đinh','Tế Dương'],['Đào','Tế Dương'],['Đặng','Nam Dương'],['Đàm','Tế Dương'],['Huỳnh','Giang Hạ'],['Hà','Lư Giang'],['Hứa','Cao Dương'],['Hoa','Võ Lăng'],['Hồ','An Định'],['Khổng','Đông Lỗ'],['Lại','Dĩnh Xuyên'],['Lỗ','Phô Phong'],['Lương','An Định'],['Lưu','Bành Thành'],['Lê','Kinh Triệu'],['Lâm','Tây Hà'],['Mao','Tây Hà'],['Mã','Phô Phong'],['Mạc','Cự Lộc'],['Mai','Nhữ Nam'],['Nguyễn','Trần Lưu'],['Ngô','Diên Lăng'],['Ông','Giám Quan'],['Phạm','Cao Bình'],['Phùng','Thi Bình'],['Phan','Vĩnh Dương'],['Quách','Thái Nguyên'],['Quan','Cao Bình'],['Trịnh','Vĩnh Dương'],['Tào','Yên Quốc'],['Tạ','Trần Lưu'],['Thân','Nguy Nguy'],['Tiêu','Lang Lăng'],['Trương','Thanh Hà'],['Triệu','Thiên Thủy'],['Tăng','Thiên Thủy'],['Thái','Tế Dương'],['Tô','Võ Công'],['Trần','Dĩnh Xuyên'],['Trà','Thái Dương'],['Vương','Thái Nguyên'],['Võ','Thái Nguyên'],['Văn','Nhạn Môn']];
+
+/* ---------- Bảng tông đồ Đời thứ 11 (chép từ ảnh – cần dò lại) ----------
+   role: kh=Hiển khảo (con trai), co=Cô (con gái), ty=Tỷ (con dâu/vợ), tk=Tỷ kế (vợ thứ)
+   [role, tên, ngày kỵ, ghi chú] */
+const DOI11=[
+{s:'Phái 1',f:'Độ',m:'Thị Quý Nương',k:[['kh','Nguyễn Như Bích'],['ty','Thị Quý Nương'],['kh','Nguyễn Như Kế']]},
+{s:'Phái 1',f:'Hổ',m:'Thân Thị Thái',k:[['kh','Nguyễn Như Thái'],['ty','Lê Thị Hân']]},
+{s:'Phái 1',f:'Hội',m:'Thị Quý Nương',k:[['kh','Nguyễn Như Nhơn'],['kh','Nguyễn Như Can','6.9'],['ty','Phạm Thị Cáo','22.8'],['kh','Nguyễn Như Lụu'],['kh','Nguyễn Như Tiển'],['co','Nguyễn Thị Nhụy'],['co','Nguyễn Thị (vô danh)'],['co','Nguyễn Thị Sự'],['co','Nguyễn Thị Dư']]},
+{s:'Phái 1',f:'Trung',m:'Nguyễn Thị Quận',k:[['kh','Nguyễn Như Trực','27.7'],['ty','Bùi Thị Chiêm','23.12'],['kh','Nguyễn Như Lý','21.1'],['tk','Đinh Thị Khương','5.10'],['tk','Thị Quý Nương'],['kh','Nguyễn Như Học','14.8'],['kh','Nguyễn Như (vô danh)'],['co','Nguyễn Thị Công'],['co','Nguyễn Thị Khuê'],['kh','Nguyễn Như (vô danh)'],['co','Nguyễn Thị Tập','','có chồng tộc Nguyễn Đông Bàn'],['co','Nguyễn Thị Kim'],['co','Nguyễn Thị Tín']]},
+{s:'Phái 1',f:'Hảo',m:'Trần Thị Dinh',k:[['kh','Nguyễn Như Trạch','26.5'],['ty','Trần Thị Hiệp','20.11']]},
+{s:'Phái 2 · Chi 1',f:'Nhân',m:'Trương Thị Cận',k:[['kh','Nguyễn Như Thanh'],['ty','Nguyễn Thị Hài'],['kh','Nguyễn Như Vân'],['co','Nguyễn Thị Nghi'],['co','Nguyễn Thị Thành'],['co','Nguyễn Thị Vị'],['co','Nguyễn Thị Bể'],['co','Nguyễn Thị Ân'],['co','Nguyễn Thị Nghĩa'],['co','Nguyễn Thị Tớn']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Trinh',m:'Thân Thị Thừa',k:[['kh','Nguyễn Như Cung','19.1'],['ty','Trần Thị Quy','14.9','quê Bác Nhị'],['co','Nguyễn Thị Em']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Kiên',m:'Thân Thị Thu',k:[['co','Nguyễn Thị Chức','','có chồng quê An Lưu'],['kh','Nguyễn Như Dậu'],['ty','Huỳnh Thị Quý Nương']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Thìn',m:'Huỳnh Thị Quý Nương',k:[['kh','Nguyễn Như Ty'],['ty','Thị Quý Nương'],['kh','Nguyễn Như Cự'],['ty','Thân Thị Bính'],['kh','Nguyễn Như Tý','5.9'],['ty','Thân Thị Quý Nương'],['co','Nguyễn Thị Mỹ','','có chồng tộc Thân Câu Nhí']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Thanh',m:'Phạm Thị Muốn',k:[['kh','Nguyễn Như Vọng','27.8'],['ty','Thân Thị Hường','21.10'],['kh','Nguyễn Như Tiệm (tức Tịm)'],['co','Nguyễn Thị Tiếp'],['co','Nguyễn Thị Lự'],['co','Nguyễn Thị Mẫn'],['kh','Nguyễn Như Dự'],['kh','Nguyễn Như Xứng','26.9'],['ty','Lê Thị Lang','1.8'],['tk','Nguyễn Thị Tựu','','quê Hạ Nông'],['kh','Nguyễn Như Được'],['kh','Nguyễn Như Đinh'],['co','Nguyễn Thị Cận'],['co','Nguyễn Thị Cái'],['co','Nguyễn Thị Vấn'],['kh','Nguyễn Như Mỗ'],['co','Nguyễn Thị Mãn'],['co','Nguyễn Thị Hựu']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Cảnh',m:'Đoàn Thị Huấn',k:[['kh','Nguyễn Như Pháp','27.2','VT'],['co','Nguyễn Thị Dự','','có chồng Lục Giáp'],['kh','Nguyễn Như Trừng'],['ty','Lê Thị Niêu'],['tk','Lê Thị Chuốc','','quê Bác Nhị'],['co','Nguyễn Thị Mật','','có chồng Bác Nhị'],['co','Nguyễn Thị Men'],['co','Nguyễn Thị Tụng'],['kh','Nguyễn Như Nhạc','','VT']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Tại',m:'Thị Quý Nương',k:[['kh','Nguyễn Như Nam'],['ty','Thân Thị Liễu']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Thường',m:'Thân Thị Châu',k:[['co','Nguyễn Thị Khuê'],['co','Nguyễn Thị Buốc'],['co','Nguyễn Thị Tính'],['kh','Nguyễn Như Toản'],['kh','Nguyễn Như Ngộ']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Hú',m:'Huỳnh Thị Cồn',k:[['co','Nguyễn Thị Hỷ','','có chồng họ Mạc Bằng An'],['co','Nguyễn Thị Rế'],['co','Nguyễn Thị Sửu'],['co','Nguyễn Thị Tồn']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Hơn',m:'Thân Thị Mèo',k:[['kh','Nguyễn Như Sồ','28.2'],['ty','Thị Quý Nương'],['co','Nguyễn Thị Ngạch','','có chồng Dinh Trận'],['kh','Nguyễn Như Khảo'],['kh','Nguyễn Như Phẩu','26.8'],['ty','Trương Thị Đương','','quê Bác Nhị']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Đao',m:'Thân Thị Huyền',k:[['kh','Nguyễn Như Nhiên'],['ty','Nguyễn Thị Nhỏ'],['kh','Nguyễn Như Lạc'],['kh','Nguyễn Như Trách']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Nghĩa',m:'Hà Thị Quý Nương',k:[['co','Nguyễn Thị Khương','','có chồng Bác Nhị'],['co','Nguyễn Thị Xin'],['kh','Nguyễn Như Hữu']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Trúc',m:'Trương Thị Luận',k:[['co','Nguyễn Thị Xin','','có chồng tộc Thân'],['co','Nguyễn Thị Nhỏ','','có chồng Thanh Hà'],['co','Nguyễn Thị Mẹo','','có chồng tộc Đỗ'],['kh','Nguyễn Như Đạc','','ở Quảng Trị'],['ty','Thị Quý Nương']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Tửu',m:'Thân Thị Long',k:[['kh','Nguyễn Như Ấm'],['ty','Nguyễn Thị Tý','','quê Bác Nhị'],['kh','Nguyễn Như Hàm','','VT'],['ty','Nguyễn Thị Dẫn','4.2','quê Bác Nhị'],['co','Nguyễn Thị Nhành'],['co','Nguyễn Thị Cẩm'],['kh','Nguyễn Như Hấp','','VT']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Phổ',m:'Thân Thị Nhỡ',k:[['co','Nguyễn Thị Đường'],['kh','Nguyễn Như Ngộ'],['ty','Thị Quý Nương'],['co','Nguyễn Thị Nhiều'],['co','Nguyễn Thị Sử','','có chồng tộc Trần Bác Nhị']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Thuần',m:'Võ Thị Toản',k:[['co','Nguyễn Thị Mai','','có chồng tộc Thân'],['kh','Nguyễn Như Thái'],['co','Nguyễn Thị Miên'],['kh','Nguyễn Như Công'],['co','Nguyễn Thị Hựu','','có chồng Xuân Thiều'],['kh','Nguyễn Như Trường'],['kh','Nguyễn Như Khoa'],['ty','Thân Thị Lụa'],['co','Nguyễn Thị Đáo','','có chồng quận Hải Châu Đà Nẵng'],['kh','Nguyễn Như Liêu']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Đực',m:'Thị Quý Nương',k:[['kh','Nguyễn Như Loan','','VT'],['kh','Nguyễn Như Thuộc','','VT'],['kh','Nguyễn Như Ngô','','ở Phú Chiêm'],['ty','Thị'],['co','Nguyễn Thị Bốn']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Dụng',m:'Hà Thị Tư',k:[['co','Nguyễn Thị Tý','','có chồng Việt An'],['kh','Nguyễn Như Sửu','','VT'],['co','Nguyễn Thị Dẫn'],['kh','Nguyễn Như Sai'],['ty','Hồ Thị Hải (Bán)']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Cang',m:'Thân Thị Đình',k:[['kh','Nguyễn Như Giai'],['ty','Lê Thị Ngại'],['kh','Nguyễn Như (chưa rõ tên)'],['kh','Nguyễn Như Kiệt'],['ty','Nguyễn Thị Phi','','quê Bác Nhị'],['co','Nguyễn Thị Nhơn']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Mẹo',m:'Đinh Thị Luật',k:[['co','Nguyễn Thị Trà'],['co','Nguyễn Thị Ấm'],['co','Nguyễn Thị Nhâm'],['kh','Nguyễn Như Phẩm'],['kh','Nguyễn Như Mót'],['ty','Lê Thị Thôi','','quê Bằng An'],['tk','Lê Thị Lý','','quê Đà Lạt']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Đung',m:'Trần Thị Liễu',k:[['kh','Nguyễn Như Phi','','VT'],['kh','Nguyễn Như Thực','','VT'],['co','Nguyễn Thị Giản'],['kh','Nguyễn Như Dinh'],['co','Nguyễn Thị Gian']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Lợi',m:'Trần Thị Huyền',k:[['kh','Nguyễn Như Hinh'],['ty','Trần Thị Tý'],['kh','Nguyễn Như Thiệt','','VT'],['kh','Nguyễn Như Bồn'],['ty','Phan Thị Cả','','quê Bàn Thạch'],['co','Nguyễn Thị Sim','','có chồng Hạ Nông']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Kiểm',m:'Trần Thị Thể',k:[['kh','Nguyễn Như Lộ','23.11'],['co','Nguyễn Thị Thí','','có chồng tộc Thân'],['co','Nguyễn Thị Nhị'],['kh','Nguyễn Như Điển','','VT'],['kh','Nguyễn Như Nuôi','','VT'],['kh','Nguyễn Như Được'],['co','Nguyễn Thị Bảy'],['co','Nguyễn Thị Nhỏ']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Ngọ',m:'Đinh Thị Bình',k:[['co','Nguyễn Thị Thìn'],['co','Nguyễn Thị Muối'],['co','Nguyễn Thị Mai','15.2']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Thành',m:'Đỗ Thị Gia',k:[['co','Nguyễn Thị Lữ'],['co','Nguyễn Thị Tiên'],['co','Nguyễn Thị Thiết'],['kh','Nguyễn Như Bình','','VT']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Thán (Doãn)',m:'Nguyễn Thị Thừa',k:[['co','Nguyễn Thị Cơ'],['kh','Nguyễn Như Tường'],['ty','Đoàn Thị Diệu'],['tk','Nguyễn Thị Đoàn','','quê Kỳ Lam'],['co','Nguyễn Thị Lược','','có chồng An Quán'],['kh','Nguyễn Như Luận'],['ty','Thân Thị Lô'],['tk','Thân Thị Huân'],['co','Nguyễn Thị Lai','','có chồng Câu Lâu'],['kh','Nguyễn Như Thí'],['ty','Nguyễn Thị Liên','','quê Bồng Lai'],['kh','Nguyễn Như Cẩn','10.5'],['kh','Nguyễn Như Chuẩn','10.5'],['co','Nguyễn Thị Miền','24.12'],['kh','Nguyễn Như Cường','24.11'],['co','Nguyễn Thị (vô danh)','1.4'],['co','Nguyễn Thị (vô danh)','20.1'],['co','Nguyễn Thị Giá']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Tín',m:'Hà Thị Liêm',k:[['co','Nguyễn Thị Trạn','','có chồng tộc Thân'],['kh','Nguyễn Như Đỗ','','VT'],['kh','Nguyễn Như Nghi','6.10','mộ Đà Lạt'],['ty','Lê Thị Nuôi','27.9','quê Mỹ Á'],['tk','Trương Thị Huệ','11.11','quê Đà Lạt, mộ táng Lai Nghi, Điện Nam'],['tk','Đinh Thị Sau','','quê Đà Lạt, mộ Đà Lạt'],['kh','Nguyễn Như Nho','25.12'],['ty','Trần Thị Cư','19.5'],['kh','Nguyễn Như Nho','22.10'],['ty','Đỗ Thị Ngộ'],['kh','Nguyễn Như Du','20.7','hiệu Lâm Thắng, sinh 1908 – mất 1996'],['ty','Lê Thị Thự','30.6','hiệu Hàm Hương, sinh 1912 – mất 2005'],['kh','Nguyễn Như Hùm','','VT'],['co','Nguyễn Thị Beo','','có chồng Trà Quế Hội An']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Sự',m:'Hà Thị Quyền',k:[['kh','Nguyễn Như Lý','','VT'],['co','Nguyễn Thị Sáo'],['co','Nguyễn Thị Nghĩa','','có chồng Khúc Lũy'],['co','Nguyễn Thị Đối','19.8','có chồng tộc Đỗ'],['kh','Nguyễn Như Kiệt','','VT'],['kh','Nguyễn Như Dích'],['ty','Trần Thị Được','','quê Khúc Lũy'],['kh','Nguyễn Như Muối'],['ty','Võ Thị Đối']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Liêm',m:'Thân Thị Ngọ',k:[['kh','Nguyễn Như (vô danh)'],['kh','Nguyễn Như Ích','20.12'],['co','Nguyễn Thị Chiêm','24.10'],['co','Nguyễn Thị Sẽ','18.12'],['kh','Nguyễn Như Ất'],['ty','Thân Thị Hòe'],['kh','Nguyễn Như Cương','16.12'],['kh','Nguyễn Như Cương','17.10'],['kh','Nguyễn Như Khương'],['ty','Lê Thị Giai'],['kh','Nguyễn Như Thừa','','đi Quảng Ngãi lúc nhỏ']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Nhượng',m:'Thân Thị Thới',k:[['co','Nguyễn Thị Thích'],['kh','Nguyễn Như Ty'],['ty','Thị Quý Nương'],['co','Nguyễn Thị Cựu'],['co','Nguyễn Thị Tửu'],['kh','Nguyễn Như Phi'],['ty','Thị Muối','','quê ở Huế'],['kh','Nguyễn Như Nghi'],['ty','Thị Quý Nương','','quê Thi Lai'],['co','Nguyễn Thị Lựu'],['co','Nguyễn Thị Đào']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Lương',m:'Thân Thị Dự',k:[['co','Nguyễn Thị Vấn'],['co','Nguyễn Thị Phiệt'],['kh','Nguyễn Như Đang','','VT'],['co','Nguyễn Thị Huệ'],['co','Nguyễn Thị Luận'],['kh','Nguyễn Như Du'],['kh','Nguyễn Như Di'],['ty','Trần Thị Giao'],['kh','Nguyễn Như Mẹo','','VT'],['kh','Nguyễn Như Muối'],['ty','Đỗ Thị Sở'],['kh','Nguyễn Như Tuất','','VT']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Thạnh',m:'Lê Thị Dự',k:[['kh','Nguyễn Như Thuật'],['ty','Phan Thị Gạo'],['kh','Nguyễn Như Luật','6.9'],['ty','Trần Thị Nhượng','27.9','quê Bác Nhị'],['kh','Nguyễn Như Hành','15.7'],['kh','Nguyễn Như Phi','15.7']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Hoang',m:'Nguyễn Thị Kiến',k:[['kh','Nguyễn Như Hân'],['ty','Nguyễn Thị Lâu','','quê Thừa Thiên'],['kh','Nguyễn Như Cho','30.10'],['ty','Nguyễn Thị Chở','17.3','quê La Qua'],['co','Nguyễn Thị Chua'],['co','Nguyễn Thị Thân'],['co','Nguyễn Thị Tý'],['co','Nguyễn Thị Xin'],['kh','Nguyễn Như Nhu'],['co','Nguyễn Thị Danh'],['co','Nguyễn Thị Nhỏ'],['kh','Nguyễn Như Hiếu','','VT'],['co','Nguyễn Thị Hý'],['kh','Nguyễn Như Nhược'],['co','Nguyễn Thị Tá'],['co','Nguyễn Thị Nghĩa']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Mật',m:'Phạm Thị Sét',k:[['co','Nguyễn Thị Mẹo'],['co','Nguyễn Thị Đào'],['kh','Nguyễn Như Méo (tức Cẩu) – Biệt xứ'],['ty','Thị Quý Nương'],['kh','Nguyễn Như Xẹo (tức Lân) – Biệt xứ'],['ty','Thị'],['kh','Nguyễn Như Muối','','VT'],['kh','Nguyễn Như Hội']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Ngọt',m:'Đoàn Thị Thạnh và bà Thân Thị Quyền',k:[['kh','Nguyễn Như Đại (tức Cẩu)','17.12'],['ty','Thân Thị Kiên (Phương)'],['kh','Nguyễn Như Nhồi','5.2'],['ty','Nguyễn Thị Chợ','','quê Câu Lâu']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Hồi',m:'Dương Thị Tý',k:[['kh','Nguyễn Như Lương','5.1'],['kh','Nguyễn Như Phiên','','VT'],['co','Nguyễn Thị Yến','','mộ Câu Lâu'],['co','Nguyễn Thị Ấm','','có chồng tộc Phạm Uất Lũy'],['kh','Nguyễn Như Năm','','ở Sài Gòn'],['ty','Phạm Thị Nhân','','quê Hạ Liên'],['kh','Nguyễn Như (vô danh)','','VT'],['co','Nguyễn Thị Được'],['kh','Nguyễn Như Đây','','VT'],['kh','Nguyễn Như Hột','','VT'],['kh','Nguyễn Như Tửu','','VT'],['kh','Nguyễn Như Thảo','','VT']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Hay (Đoan)',m:'Nguyễn Thị Thuần',k:[['kh','Nguyễn Như Quảng'],['ty','Huỳnh Thị Bồi'],['kh','Nguyễn Như Sáu'],['kh','Nguyễn Như Quý'],['ty','Nguyễn Thị Lý'],['co','Nguyễn Thị Vi'],['kh','Nguyễn Như (vô danh)']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Đường',m:'Lê Thị Cự',k:[['kh','Nguyễn Như Nhụ'],['ty','Nguyễn Thị Thú','','quê Điện Phong'],['co','Nguyễn Thị Ngôn'],['co','Nguyễn Thị Ngữ','','ở Sài Gòn'],['kh','Nguyễn Như Trừ'],['ty','Nguyễn Thị Nuôi','','tái giá'],['kh','Nguyễn Như Ân','','VT']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Hoáng',m:'Nguyễn Thị Giáo',k:[['co','Nguyễn Thị Hoanh'],['co','Nguyễn Thị Hung'],['kh','Nguyễn Như Cang (tức Long)','','ở Quy Nhơn'],['ty','Phan Thị Lang'],['kh','Nguyễn Như Thưởng (tức Chút)','16.4'],['ty','Thị'],['kh','Nguyễn Như Tý','','ở Mỹ'],['ty','Đặng Thị Ninh','','gia đình ông Tý định cư ở Mỹ']]},
+{s:'Phái 2 · Chi 2 · Nhánh 3',f:'Tập',m:'Lê Thị Khả',k:[['co','Nguyễn Thị (vô danh)'],['kh','Nguyễn Như Lập'],['ty','Lê Thị Em'],['co','Nguyễn Thị Dậu']]},
+{s:'Phái 2 · Chi 2 · Nhánh 3',f:'Thi',m:'Thân Thị Xuyên',k:[['kh','Nguyễn Như Đạt'],['co','Nguyễn Thị Chính'],['co','Nguyễn Thị Mọt'],['co','Nguyễn Thị Địch'],['co','Nguyễn Thị Mẹo']]},
+{s:'Phái 2 · Chi 2 · Nhánh 3',f:'Thơ',m:'Lê Thị Lai',k:[['kh','Nguyễn Như Thái'],['co','Nguyễn Thị Thân'],['kh','Nguyễn Như Vĩ'],['co','Nguyễn Thị Chuốc'],['co','Nguyễn Thị Đinh'],['co','Nguyễn Thị Bính']]},
+{s:'Phái 2 · Chi 2 · Nhánh 3',f:'Giáo',m:'Thân Thị Lai',k:[['co','Nguyễn Thị Sửu'],['kh','Nguyễn Như Hý (Dư)'],['ty','Tăng Thị Dự'],['kh','Nguyễn Như Thuyết (Ngữ)'],['ty','Tăng Thị Ngữ'],['co','Nguyễn Thị Ngôn'],['kh','Nguyễn Như Khánh'],['ty','Thị Quý Nương','','quê Điện Phương'],['kh','Nguyễn Như Hòa'],['ty','Thân Thị Hòa','20.4']]},
+{s:'Phái 2 · Chi 2 · Nhánh 3',f:'Huấn',m:'Lê Thị Cuốc',k:[['kh','Nguyễn Như Sắc'],['kh','Nguyễn Như Sạ'],['kh','Nguyễn Như Tùng'],['kh','Nguyễn Như Bá'],['co','Nguyễn Thị Ty','','có chồng tộc Võ Khúc Lũy'],['kh','Nguyễn Như Lương','2.7'],['ty','Trần Thị Muối (Mùi)'],['co','Nguyễn Thị Dung','','có chồng An Trường'],['kh','Nguyễn Như Rạm','','VT'],['kh','Nguyễn Như Thìn'],['co','Nguyễn Thị Nghĩa','','có chồng Bồng Lai'],['co','Nguyễn Thị Huân (Quận)']]},
+{s:'Phái 3',f:'Vị',m:'Lê Thị Khế',k:[['kh','Nguyễn Như Khiêu'],['kh','Nguyễn Như Sừng','19.8'],['ty','Đỗ Thị Nồi','6.6'],['co','Nguyễn Thị Sồ'],['co','Nguyễn Thị Dung'],['co','Nguyễn Thị Bất'],['co','Nguyễn Thị Khuất']]},
+{s:'Phái 3',f:'Siêu',m:'Nguyễn Thị Trạo',k:[['kh','Nguyễn Như Trách'],['kh','Nguyễn Như Trà','30.12'],['co','Nguyễn Thị Khương','16.12'],['co','Nguyễn Thị Ninh','11.11'],['kh','Nguyễn Như Xa'],['kh','Nguyễn Như Diên','16.5'],['co','Nguyễn Thị Chút'],['kh','Nguyễn Như Thiện'],['ty','Lê Thị Bé','30.6'],['kh','Nguyễn Như Tâm','1.4'],['ty','Huỳnh Thị Lượng']]},
+{s:'Phái 4',f:'Trung',m:'Nguyễn Thị Liêm',k:[['co','Nguyễn Thị Di','','có chồng Bác Nhị'],['kh','Nguyễn Như Khả'],['ty','Thị Quý Nương'],['kh','Nguyễn Như Yến'],['ty','Ngô Thị Tích'],['co','Nguyễn Thị Lời'],['kh','Nguyễn Như Nhiêu'],['ty','Trương Thị Lẫm'],['kh','Nguyễn Như Hội'],['ty','Dương Thị Phiên'],['co','Nguyễn Thị Mảng','','có chồng Bác Nhị']]}
+];
+
+/* ---------- Đời thứ 12 (con của đời 11 – chép từ ảnh, cần dò lại) ----------
+   f = tên huý của cha (người đời 11); sẽ tự nối vào đúng cha theo tên (so khớp không dấu) */
+const DOI12=[
+{s:'Phái 1',f:'Bích',m:'Thị Quý Nương',k:[['kh','Nguyễn Như Võ','28.8'],['ty','Phạm Thị Hựu','20.7']]},
+{s:'Phái 1',f:'Thái',m:'Lê Thị Hân',k:[['kh','Nguyễn Như Núc','18.7'],['ty','Ngô Thị Chuyện','13.10']]},
+{s:'Phái 1',f:'Can',m:'Phạm Thị Cáo',k:[['kh','Nguyễn Như Bảo'],['ty','Thị Diên'],['kh','Nguyễn Như Sạn'],['ty','Nguyễn Thị Út'],['kh','Nguyễn Như Đá'],['ty','Đỗ Thị Đường'],['co','Nguyễn Thị Tố'],['co','Nguyễn Thị Hộ'],['co','Nguyễn Thị Nền'],['co','Nguyễn Thị Sanh']]},
+{s:'Phái 1',f:'Trực',m:'Bùi Thị Chiêm',k:[['kh','Nguyễn Như Huân','27.12'],['ty','Đỗ Thị Thuận','','tái giá'],['co','Nguyễn Thị Huyền','','có chồng tộc Đỗ'],['co','Nguyễn Thị Mẹo','','có chồng tộc Trần Khúc Lũy'],['co','Nguyễn Thị Cơ']]},
+{s:'Phái 1',f:'Lý',m:'Đinh Thị Khương',k:[['kh','Nguyễn Như Dật'],['kh','Nguyễn Như Tuất','13.11'],['co','Nguyễn Thị Dự'],['co','Nguyễn Thị Thuyết']]},
+{s:'Phái 1',f:'Trạch',m:'Trần Thị Hiệp',k:[['kh','Nguyễn Như Sửu','7.2','mộ táng làng Cảnh Vân, Bình Định'],['ty','Trần Thị Tâm','18.6'],['tk','Phạm Thị Quy','14.10'],['kh','Nguyễn Như Cường','24.6'],['ty','Thân Thị Cường','1.9'],['co','Nguyễn Thị Lập','','có chồng tộc Lê Thanh Châu'],['kh','Nguyễn Như Viễn','20.8'],['ty','Thân Thị Uốc','23.11'],['tk','Trần Thị Hinh'],['kh','Nguyễn Như Lai','','VT'],['kh','Nguyễn Như Vấn','10.2'],['ty','Phạm Thị Mẹo','24.7'],['co','Nguyễn Thị Hoàng','','có chồng tộc Mạc Bằng An'],['co','Nguyễn Thị Cẩn','','có chồng Câu Lâu'],['kh','Nguyễn Như Tích','20.12'],['ty','Trần Thị Lạc','15.10','mộ Đà Nẵng'],['tk','Văn Thị Nuôi','12.9','quê Câu Lâu']]},
+{s:'Phái 2 · Chi 1',f:'Thanh',m:'Nguyễn Thị Hài',k:[['co','Nguyễn Thị Kiểm'],['co','Nguyễn Thị Xuyên'],['co','Nguyễn Thị Cẩm'],['co','Nguyễn Thị Cúc'],['kh','Nguyễn Như Trân'],['ty','Trần Thị Xâu'],['kh','Nguyễn Như Bích'],['ty','Trần Thị Đỉnh'],['co','Nguyễn Thị Lang'],['co','Nguyễn Thị Huế']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Cung',m:'Trần Thị Quy',k:[['kh','Nguyễn Như Kính','','VT'],['co','Nguyễn Thị Dự (Xuân)'],['co','Nguyễn Thị Lý'],['kh','Nguyễn Như Đậu','12.5'],['co','Nguyễn Thị Chề','','có chồng Duy Xuyên'],['kh','Nguyễn Như Thạnh'],['ty','Đỗ Thị Thời']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Dậu',m:'Huỳnh Thị Quý Nương',k:[['co','Nguyễn Thị Mày'],['kh','Nguyễn Như Quýt','','VT']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Cự',m:'Thân Thị Bình',k:[['co','Nguyễn Thị Nai'],['kh','Nguyễn Như Nài','','VT']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Tý',m:'Thân Thị Quý Nương',k:[['kh','Nguyễn Như Khải','','VT']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Vong',m:'Thân Thị Hường',k:[['kh','Nguyễn Như Khâm','28.10','VT'],['co','Nguyễn Thị Tứ','','có chồng tộc Trần Tư Phú'],['co','Nguyễn Thị Trả'],['kh','Nguyễn Như Lương'],['ty','Lê Thị Nồi','','quê Vĩnh Điện'],['co','Nguyễn Thị Trầm','','có chồng tộc Bằng An'],['kh','Nguyễn Như Giới','23.4','VT'],['co','Nguyễn Thị Bạn','','có chồng tộc Nguyễn Kỳ Lam'],['kh','Nguyễn Như Cho'],['ty','Hà Thị Quy (Huy)']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Xứng',m:'Lê Thị Lang',k:[['kh','Nguyễn Như Chất'],['ty','Trần Thị Khâm','','quê Bác Nhị'],['kh','Nguyễn Như Tân'],['ty','Nguyễn Thị Vỹ','','quê Bác Nhị'],['tk','Nguyễn Thị Cường','','quê Quảng Ngãi'],['kh','Nguyễn Như Phu','18.5','VT'],['kh','Nguyễn Như Chước (tức Dụng)','27.1'],['ty','Nguyễn Thị Ngộ','','quê Nông Sơn'],['co','Nguyễn Thị Khế','','có chồng tộc Thân'],['co','Nguyễn Thị Lai','26.7'],['kh','Nguyễn Như Bối','13.1','VT'],['co','Nguyễn Thị Thọ'],['kh','Nguyễn Như Mộng','','VT']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Trừng',m:'Đỗ Thị Niêu',k:[['kh','Nguyễn Như Tuất','','VT'],['kh','Nguyễn Như Dục','','VT'],['kh','Nguyễn Như Chung'],['co','Nguyễn Thị Tráng'],['co','Nguyễn Thị Đồng','27.9'],['co','Nguyễn Thị Khối','','có chồng tộc Bác Nhị'],['kh','Nguyễn Như Ngự','12.7'],['ty','Nguyễn Thị Tai'],['kh','Nguyễn Như Thiện','14.4','VT'],['co','Nguyễn Thị Hốt','','có chồng tộc Hạ Nông']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Nam',m:'Thân Thị Liễu',k:[['kh','Nguyễn Như Đối','','VT']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Sồ',m:'Thị Quý Nương',k:[['co','Nguyễn Thị Đành','','có chồng tộc Bác Nhị'],['kh','Nguyễn Như Chỉnh','','VT'],['co','Nguyễn Thị Phát'],['co','Nguyễn Thị Bờ'],['co','Nguyễn Thị Buội'],['co','Nguyễn Thị Góc']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Phẩu',m:'Trương Thị Đương',k:[['co','Nguyễn Thị Soạn'],['kh','Nguyễn Như Sành (tức Nuôi)','','gia đình ở Lái Thiêu'],['kh','Nguyễn Như Bán'],['ty','Lê Thị Hết','24.10','quê Bác Nhị'],['tk','Trần Thị Thanh Vân','','quê Bác Nhị']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Nhiên',m:'Nguyễn Thị Nhỏ',k:[['kh','Nguyễn Như Điểm'],['ty','Thân Thị Tồn'],['kh','Nguyễn Như Dượm','14.2'],['ty','Nguyễn Thị Sim','','có chồng tộc Thân'],['kh','Nguyễn Như Sán'],['kh','Nguyễn Như Nghiêm'],['co','Nguyễn Thị Chật','','có chồng tộc Bác Nhị'],['kh','Nguyễn Như Tiến'],['ty','Trần Thị Hường','','quê Hạ Nông'],['co','Nguyễn Thị Chăng','18.4','có chồng tộc Bằng An'],['kh','Nguyễn Như Lập']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Ấm',m:'Nguyễn Thị Tý',k:[['co','Nguyễn Thị Sửu','','có chồng tộc Câu Lâu'],['kh','Nguyễn Như Vân','11.7'],['ty','Thân Thị Chung','','tái giá'],['co','Nguyễn Thị Lọ','','có chồng tộc Trần'],['co','Nguyễn Thị Liễu'],['kh','Nguyễn Như Tân','29.11']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Ngô',m:'Thị',k:[['co','Nguyễn Thị Hiếu'],['co','Nguyễn Thị Lậu','','có chồng tộc Phú Toản']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Khoa',m:'Thân Thị Lựu',k:[['kh','Nguyễn Như Kinh'],['kh','Nguyễn Như Khóa'],['kh','Nguyễn Như Chước'],['ty','Văn Thị Thoa'],['tk','Thị Cam'],['co','Nguyễn Thị Ca','','có chồng tộc Thủy Tú'],['kh','Nguyễn Như Rớt'],['kh','Nguyễn Như Vinh'],['ty','Lê Thị Thanh'],['kh','Nguyễn Như Nhứt'],['co','Nguyễn Thị Nhĩ','','mộ ở Liên Chiểu'],['kh','Nguyễn Như Ngân'],['ty','Huỳnh Thị Siêng'],['kh','Nguyễn Như Nga'],['kh','Nguyễn Như Út'],['kh','Nguyễn Như Tửu'],['co','Nguyễn Thị Trà']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Ngò',m:'Thị',k:[['co','Nguyễn Thị Chất'],['co','Nguyễn Thị Thí'],['co','Nguyễn Thị Thơ','','có chồng tộc Kỳ Lam']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Sai',m:'Hồ Thị Hải',k:[['co','Nguyễn Thị Hải'],['co','Nguyễn Thị Tam'],['kh','Nguyễn Như Rân'],['ty','Trần Thị Búp','','quê An Hải Đà Nẵng'],['co','Nguyễn Thị Ruồi','','có chồng tộc Trần'],['co','Nguyễn Thị Ruồi Em'],['co','Nguyễn Thị Bé'],['kh','Nguyễn Như Chanh'],['ty','Nguyễn Thị Cẩn','','quê ở Chu Lai'],['co','Nguyễn Thị Quýt'],['kh','Nguyễn Như An'],['co','Nguyễn Thị Tâm'],['co','Nguyễn Thị Cam'],['kh','Nguyễn Như Trì']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Giai',m:'Lê Thị Ngại',k:[['co','Nguyễn Thị Hòa'],['co','Nguyễn Thị Hòa Em','','có chồng Đà Nẵng']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Kiệt',m:'Nguyễn Thị Phú',k:[['kh','Nguyễn Như Lực','1.9'],['ty','Đỗ Thị Mót','','quê Uất Lũy'],['kh','Nguyễn Như Dũng'],['ty','Huỳnh Thị Diên','','quê Quy Nhơn'],['kh','Nguyễn Như Giã'],['ty','Ngô Thị Thế'],['kh','Nguyễn Như Khôi','11.12'],['ty','Bùi Thị Hưng','','quê Phan Thiết'],['kh','Nguyễn Như Kỳ','11.12']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Mót',m:'Lê Thị Thôi',k:[['kh','Nguyễn Như Thanh'],['ty','Nguyễn Thị Được'],['kh','Nguyễn Như Nhàn'],['co','Nguyễn Thị Gái'],['kh','Nguyễn Như Phú'],['kh','Nguyễn Như Quý'],['kh','Nguyễn Như Vinh'],['kh','Nguyễn Như Quang','','gia đình các con ông Mót sinh sống ở Đà Lạt']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Hinh',m:'Thân Thị Tý',k:[['co','Nguyễn Thị Khích'],['co','Nguyễn Thị Xích'],['kh','Nguyễn Như Dũng (Xiền)'],['ty','Đinh Thị Hoa','','quê Hội An'],['kh','Nguyễn Như Đoán (Xị)','','VT'],['kh','Nguyễn Như Yên','','VT'],['kh','Nguyễn Như Lặng'],['ty','Huỳnh Thị Thảo','','quê Bằng An']]},
+{s:'Phái 2 · Chi 2 · Nhánh 1',f:'Bồn',m:'Phan Thị Cả',k:[['kh','Nguyễn Như Thái'],['ty','Lê Thị Sang'],['kh','Nguyễn Như Bình'],['ty','Lương Thị Hương'],['co','Nguyễn Thị Chiến'],['co','Nguyễn Thị Đấu'],['co','Nguyễn Thị Sum'],['kh','Nguyễn Như Họp'],['ty','Trần Thị Thu Hồng'],['co','Nguyễn Thị Hòa'],['co','Nguyễn Thị Thuận'],['co','Nguyễn Thị Thảo'],['kh','Nguyễn Như Hội'],['ty','Trịnh Thị Minh Nguyệt']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Tường',m:'Đoàn Thị Diệu',k:[['co','Nguyễn Thị Hoành'],['co','Nguyễn Thị Ty','','có chồng tộc Đỗ'],['kh','Nguyễn Như Châu','','VT'],['co','Nguyễn Thị Dưỡng','','có chồng tộc Đỗ'],['co','Nguyễn Thị Hú','','có chồng tộc Thân'],['kh','Nguyễn Như Phóng'],['ty','Tạ Thị Chân'],['kh','Nguyễn Như Đào'],['ty','Nguyễn Thị Sự','','quê La Qua'],['kh','Nguyễn Như Liễu'],['ty','Đỗ Thị Muộn'],['tk','Dương Thị Cửu','','quê Câu Lâu'],['co','Nguyễn Thị Hú Em','','có chồng tộc Huế']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Luận',m:'Thân Thị Lô',k:[['co','Nguyễn Thị Hành','','có chồng Bằng An'],['co','Nguyễn Thị Hẹ','','có chồng tộc Trần Khúc Lũy'],['co','Nguyễn Thị Hinh'],['kh','Nguyễn Như Hoạch','','gia đình ở Nha Trang'],['ty','Trần Thị Xứng'],['co','Nguyễn Thị Sách','','có chồng tộc Lê'],['co','Nguyễn Thị Sách Em'],['kh','Nguyễn Như Mót','','gia đình ở Việt An'],['ty','Dương Thị Lào','','quê Quế Sơn']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Thí',m:'Nguyễn Thị Liên',k:[['kh','Nguyễn Như Tân'],['ty','Trần Thị Tùy'],['tk','Đỗ Thị Bé'],['kh','Nguyễn Như Gia (Xã Phòng)'],['ty','Thái Thị Thắng'],['co','Nguyễn Thị Dứa','','có chồng tộc Dương Câu Lâu'],['co','Nguyễn Thị Dứa Em']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Nghi',m:'Lê Thị Dục',k:[['co','Nguyễn Thị Dục','','có chồng tộc Nguyễn Câu Lâu'],['co','Nguyễn Thị Đạc','','có chồng tộc Lê Bằng An'],['co','Nguyễn Thị Trầu','','có chồng ở Đà Lạt'],['co','Nguyễn Thị Dứa','','có chồng Kỳ Lam, sống ở Đà Lạt'],['co','Nguyễn Thị Hoa','','sống ở Đà Lạt, con bà họ Trương'],['co','Nguyễn Thị Cúc','','có chồng Trà In, con bà Trương Thị Huệ'],['kh','Nguyễn Như Thiệt','8.4','con bà Dục'],['kh','Nguyễn Như Xiềng (Út)','','con bà Đinh Thị Sau'],['ty','Lê Thị Trinh','','quê Bằng An'],['kh','Nguyễn Như Xích','','VT']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Bổng',m:'Trần Thị Cư',k:[['co','Nguyễn Thị Xứ','','có chồng tộc Lê La Qua'],['co','Nguyễn Thị Kế (Đáng)','','có chồng Quảng Ngãi'],['kh','Nguyễn Như Tấu'],['ty','Thân Thị Phiên'],['co','Nguyễn Thị Bẫm (tức Thủy)','','có chồng tộc Đinh Bằng An'],['kh','Nguyễn Như Tồn','','VT'],['kh','Nguyễn Như Biệt','','VT'],['kh','Nguyễn Như Tiền'],['ty','Thân Thị Hoa'],['co','Nguyễn Thị Hiền','','có chồng tộc Lê Bằng An'],['co','Nguyễn Thị Liên','','có chồng Đà Nẵng, định cư Mỹ']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Nho',m:'Đỗ Thị Độ',k:[['kh','Nguyễn Như Thuận','','VT'],['kh','Nguyễn Như Y','','VT'],['kh','Nguyễn Như Dũ'],['ty','Phạm Thị Định','','quê Nam Định'],['kh','Nguyễn Như Thành (tức Có)'],['ty','Nguyễn Thị May'],['co','Nguyễn Thị Đây']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Du',m:'Lê Thị Thự',k:[['kh','Nguyễn Như Hà','8.7'],['ty','Trần Thị Sĩ','','tái giá'],['kh','Nguyễn Như Thái','4.4','VT'],['kh','Nguyễn Như Hải','1.2'],['ty','Nguyễn Thị Bích Hường','','quê Mộ Đức Quảng Ngãi'],['kh','Nguyễn Như Lượm'],['ty','Nguyễn Thị Năm','','quê Điện Phong'],['kh','Nguyễn Như Tuân'],['ty','Đỗ Thị Xuân Hương']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Dích',m:'Trần Thị Được',k:[['co','Nguyễn Thị Lộc','','có chồng tộc Lê'],['kh','Nguyễn Như Mai','','GĐ ở Bà Rịa Vũng Tàu'],['ty','Mai Thị Truyền','','quê Quảng Trị'],['kh','Nguyễn Như Thống (Xuân Thống)','','gia đình ở Sài Gòn'],['ty','Phạm Thị Lý','','quê Điện Phước'],['kh','Nguyễn Như Năm','','VT'],['kh','Nguyễn Như Sáu'],['ty','Lê Thị Dung'],['co','Nguyễn Thị Bảy','','có chồng tộc Lê Bằng An'],['co','Nguyễn Thị Tám','','có chồng tộc Nguyễn Khúc Lũy'],['co','Nguyễn Thị Chín','','có chồng tộc Hòa Quý, Đà Nẵng']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Muối',m:'Võ Thị Đối',k:[['kh','Nguyễn Như Hưởng'],['ty','Nguyễn Thị Tú','','quê Điện Thọ'],['tk','Nguyễn Thị Song Kiều'],['co','Nguyễn Thị Hưởng Em','','có chồng tộc Đỗ'],['kh','Nguyễn Như Huân','','GĐ ở Sài Gòn'],['ty','Phạm Thị Yến'],['co','Nguyễn Thị Xinh'],['co','Nguyễn Thị Liễn','','có chồng tộc Dương Quế Sơn'],['kh','Nguyễn Như Chiến'],['ty','Nguyễn Thị Hai','','quê Hội An'],['kh','Nguyễn Như Xiến','','VT'],['co','Nguyễn Thị Thắng','','có chồng tộc Đỗ'],['co','Nguyễn Thị Khuyên'],['co','Nguyễn Thị Như','','có chồng tộc Đỗ'],['co','Nguyễn Thị Nguyệt','','có chồng tộc Bùi Khúc Lũy']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Ất',m:'Thân Thị Hòe',k:[['kh','Nguyễn Như Buổi','','VT'],['kh','Nguyễn Như Xáo'],['ty','Trần Thị Em','','quê La Qua'],['tk','Hà Thị Tại','','quê Bằng An']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Khương',m:'Lê Thị Giai',k:[['co','Nguyễn Thị Dảng','4.3'],['kh','Nguyễn Như Kề','2.8'],['ty','Phạm Thị Miều','','quê Dinh Trận, tái giá'],['kh','Nguyễn Như Tựu (tức Long)','29.1','VT'],['co','Nguyễn Thị Hội'],['kh','Nguyễn Như Thiệp','','VT'],['co','Nguyễn Thị Tiếp (Lương)','','có chồng tộc Hà Ngọc Liên'],['co','Nguyễn Thị Lịch','','có chồng tộc Nguyễn Câu Lâu']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Ty',m:'Thị Quý Nương',k:[['co','Nguyễn Thị Chè','','có chồng tộc Kim Bồng'],['kh','Nguyễn Như Tây','','VT'],['co','Nguyễn Thị Khai','','có chồng tộc Đại Lộc']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Phi',m:'Thị Muồi',k:[['co','Nguyễn Thị Danh']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Di',m:'Trần Thị Giao',k:[['kh','Nguyễn Như Lảng','','VT'],['kh','Nguyễn Như Lanh','','VT'],['co','Nguyễn Thị Quýt','','có chồng tộc Đỗ, mộ ở Gia Rây'],['co','Nguyễn Thị Quýt Em'],['kh','Nguyễn Như Xuân','','VT'],['co','Nguyễn Thị The']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Thuật',m:'Phan Thị Gạo',k:[['kh','Nguyễn Như Hú','','GĐ ở Ngũ Hành Sơn, ĐN'],['ty','Mai Thị Thú','16.6'],['tk','Phạm Thị Ở','','quê Hội An'],['kh','Nguyễn Như Được'],['co','Nguyễn Thị Hý'],['co','Nguyễn Thị Ni']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Luật',m:'Trần Thị Nhượng',k:[['kh','Nguyễn Như Lực','','VT'],['ty','Nguyễn Thị Cúc'],['kh','Nguyễn Như Hào','24.12'],['ty','Nguyễn Thị Ẩm']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Hân',m:'Nguyễn Thị Lậu',k:[['kh','Nguyễn Như Bân'],['co','Nguyễn Thị Gái'],['co','Nguyễn Thị Bé'],['co','Nguyễn Thị Thu'],['kh','Nguyễn Như Bì','','GĐ ở Sài Gòn'],['ty','Phạm Thị Thanh','','quê ở Huế'],['co','Nguyễn Thị Em','','có chồng ở Huế, định cư Mỹ'],['kh','Nguyễn Như Bé','','GĐ ở Sài Gòn'],['co','Nguyễn Thị Thanh']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Cho',m:'Nguyễn Thị Chở',k:[['co','Nguyễn Thị Bổ'],['kh','Nguyễn Như Gia'],['ty','Mạc Thị Sơn'],['co','Nguyễn Thị Nhủ','','có chồng tộc Câu Lâu'],['kh','Nguyễn Như Kỷ','23.12'],['kh','Nguyễn Như Càng','17.8'],['kh','Nguyễn Như Ngang'],['ty','Nguyễn Thị Sương'],['kh','Nguyễn Như Ngốn'],['ty','Võ Thị Tây'],['tk','Đoàn Thị Dịnh','','quê Điện Dương, Điện Bàn']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Cầu',m:'Thân Thị Kiên',k:[['kh','Nguyễn Như Kiên'],['ty','Lê Thị Đa'],['tk','Phạm Thị Liễu','','quê Túy Loan'],['kh','Nguyễn Như Hý','','GĐ ở Đức Hòa, Hậu Nghĩa'],['ty','Lê Thị Tý','','quê Đức Hòa'],['kh','Nguyễn Như Hú','','VT'],['kh','Nguyễn Như Xí','','VT'],['kh','Nguyễn Như Xị','','VT'],['co','Nguyễn Thị Hoa'],['kh','Nguyễn Như Tâm'],['ty','Phạm Thị Xinh'],['co','Nguyễn Thị Chín'],['kh','Nguyễn Như Mười'],['ty','Trần Thị Cúc','','quê Đông Định Tân Mỹ, định cư Mỹ'],['co','Nguyễn Thị Một','','có chồng tộc Đỗ'],['co','Nguyễn Thị Thìn','','có chồng Lê Viết Bằng An']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Ổi',m:'Nguyễn Thị Chợ',k:[['co','Nguyễn Thị Khá'],['co','Nguyễn Thị Khá Em','','có chồng Thân'],['kh','Nguyễn Như Tỵ','','VT'],['co','Nguyễn Thị Bé'],['co','Nguyễn Thị Xê','','có chồng Lê Đức Bằng An'],['kh','Nguyễn Như Anh'],['ty','Trần Thị Thanh','','quê Khúc Lũy'],['co','Nguyễn Thị Xít','','có chồng tộc Lê'],['kh','Nguyễn Như Dũng'],['ty','Đỗ Thị Vân'],['co','Nguyễn Thị Tới'],['co','Nguyễn Thị Một','','có chồng tộc Lê'],['co','Nguyễn Thị Sương','','có chồng tộc Lê Phước Kiều']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Nắm',m:'Phạm Thị Nhàn',k:[['kh','Nguyễn Như Xin','','GĐ định cư Mỹ, không liên lạc'],['kh','Nguyễn Như Hải','','GĐ định cư Mỹ, không liên lạc'],['co','Nguyễn Thị Tiết','','ở Sài Gòn']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Quảng',m:'Huỳnh Thị Bồi',k:[['kh','Nguyễn Như Nghi'],['ty','Trần Thị Lan'],['co','Nguyễn Thị Rạng'],['co','Nguyễn Thị Hoa A'],['co','Nguyễn Thị Hoa B'],['co','Nguyễn Thị Tri'],['co','Nguyễn Thị Diện']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Quý',m:'Nguyễn Thị Lý',k:[['kh','Nguyễn Như Trọng'],['ty','Võ Thị Thu'],['kh','Nguyễn Như Tân','','VT'],['kh','Nguyễn Như Kính','','xuất gia'],['kh','Nguyễn Như Cư','','VT'],['kh','Nguyễn Như Chiến','','VT'],['kh','Nguyễn Như Thắng'],['ty','Phan Thị Thủy'],['kh','Nguyễn Như (vô danh)']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Lự',m:'Nguyễn Thị Thú',k:[['kh','Nguyễn Như Xự (tức Sang)'],['ty','Lê Thị Hương','','quê Vĩnh Điện'],['kh','Nguyễn Như Xoàn'],['ty','Lê Thị Hạnh','','quê Bằng An'],['kh','Nguyễn Như Tuấn'],['ty','Đỗ Thị Ửng','','quê La Qua'],['kh','Nguyễn Như Xuân'],['ty','Nguyễn Thị Hồng','','quê Duy Xuyên'],['kh','Nguyễn Như Bình'],['ty','Hà Thị May','','quê Bằng An'],['kh','Nguyễn Như Minh'],['ty','Tăng Thị Ánh']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Trừ',m:'Nguyễn Thị Nuôi',k:[['co','Nguyễn Thị Mừng'],['co','Nguyễn Thị Chúc'],['co','Nguyễn Thị Chúc Em','','có chồng tộc Hà Khúc Lũy']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Long',m:'Phan Thị Lang',k:[['kh','Nguyễn Như Hải'],['co','Nguyễn Thị Thu Hà'],['co','Nguyễn Thị Thu Thủy'],['co','Nguyễn Thị Thu Bích'],['kh','Nguyễn Như Sơn'],['ty','Trần Thị Bích Vân'],['co','Nguyễn Thị Ánh Tuyết'],['kh','Nguyễn Như Cường'],['co','Nguyễn Thị Như Trang','','con cháu ông Cang (tức Long) đều ở Quy Nhơn']]},
+{s:'Phái 2 · Chi 2 · Nhánh 2',f:'Tý',m:'Đặng Thị Ninh',k:[['co','Nguyễn Thị Yến'],['kh','Nguyễn Như Anh'],['co','Nguyễn Thị Trầm'],['co','Nguyễn Thị Thạch'],['co','Nguyễn Thị Ngọc'],['kh','Nguyễn Như Dũng'],['co','Nguyễn Thị Loan'],['co','Nguyễn Thị Lan'],['kh','Nguyễn Như Ân'],['kh','Nguyễn Như Lộc','','gia đình ông Dũng và ông Ân định cư Mỹ']]},
+{s:'Phái 2 · Chi 2 · Nhánh 3',f:'Lập',m:'Lê Thị Em',k:[['co','Nguyễn Thị (vô danh)'],['kh','Nguyễn Như Hành'],['co','Nguyễn Thị Hệ'],['kh','Nguyễn Như Cho'],['ty','Nguyễn Thị Hinh'],['co','Nguyễn Thị Xin'],['kh','Nguyễn Như Chua'],['kh','Nguyễn Như Chát'],['ty','Nguyễn Thị Thềm'],['tk','Lê Thị Lời'],['kh','Nguyễn Như (vô danh)'],['kh','Nguyễn Như Giả'],['ty','Trịnh Thị Điều']]},
+{s:'Phái 2 · Chi 2 · Nhánh 3',f:'Thuyết',m:'Tăng Thị Ngữ',k:[['kh','Nguyễn Như Sừng'],['ty','Trần Thị Sừng']]},
+{s:'Phái 2 · Chi 2 · Nhánh 3',f:'Lương',m:'Trần Thị Mùi',k:[['kh','Nguyễn Như Ngại'],['ty','Võ Thị Chút'],['kh','Nguyễn Như Đống'],['ty','Lê Thị Mẹo'],['tk','Nguyễn Thị Thùm'],['co','Nguyễn Thị (vô danh)'],['co','Nguyễn Thị Liên'],['kh','Nguyễn Như Hườn'],['ty','Bùi Thị Sáo'],['co','Nguyễn Thị Liền'],['kh','Nguyễn Như May'],['ty','Đỗ Thị Chi']]},
+{s:'Phái 3',f:'Sừng',m:'Đỗ Thị Nồi',k:[['co','Nguyễn Thị Tuấn','','có chồng tộc Bùi Khúc Lũy'],['co','Nguyễn Thị Chuẩn','','có chồng tộc Lê'],['co','Nguyễn Thị Hý'],['co','Nguyễn Thị Nghiêu','','có chồng tộc Võ Khúc Lũy'],['co','Nguyễn Thị Lương'],['co','Nguyễn Thị Em','','có chồng tộc Thân']]},
+{s:'Phái 3',f:'Thiện',m:'Lê Thị Bé',k:[['kh','Nguyễn Như Toàn'],['ty','Thân Thị Thái'],['tk','Lê Thị Nghĩa'],['kh','Nguyễn Như Năng','17.5'],['kh','Nguyễn Như (vô danh)'],['kh','Nguyễn Như Nẩy','22.2'],['co','Nguyễn Thị Gái','12.1'],['co','Nguyễn Thị Xin','20.9'],['co','Nguyễn Thị Xê','','có chồng tộc Phan Điện Phong'],['kh','Nguyễn Như Thơm','17.9'],['co','Nguyễn Thị Thọ','4.4'],['co','Nguyễn Thị Lượm','','con nuôi']]},
+{s:'Phái 3',f:'Tâm',m:'Huỳnh Thị Lượng',k:[['kh','Nguyễn Như Thành','1.4','VT']]},
+{s:'Phái 4',f:'Yến',m:'Ngô Thị Tích',k:[['kh','Nguyễn Như Trừ'],['ty','Phạm Thị Cận'],['tk','Dương Thị Đắc']]},
+{s:'Phái 4',f:'Nhiều',m:'Trương Thị Lẫm',k:[['kh','Nguyễn Như Đạc'],['ty','Thân Thị Sửu']]},
+{s:'Phái 4',f:'Hội',m:'Dương Thị Phiên',k:[['co','Nguyễn Thị Định','','có chồng Câu Lâu'],['kh','Nguyễn Như Đắc'],['ty','Phạm Thị Luôn'],['tk','Trương Thị Đồng'],['kh','Nguyễn Như Hơn'],['ty','Nguyễn Thị Mảng'],['co','Nguyễn Thị Đậu'],['kh','Nguyễn Như Sự'],['ty','Trương Thị Lấn'],['co','Nguyễn Thị An'],['kh','Nguyễn Như Thạch'],['ty','Hà Thị Phi']]}
+];
+
+/* ---------- utils ---------- */
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $=id=>document.getElementById(id);
+function toast(msg){const t=document.createElement('div');t.textContent=msg;
+  t.style.cssText='position:fixed;left:50%;bottom:150px;transform:translateX(-50%);background:#3a2b15;color:#fff;padding:11px 18px;border-radius:24px;z-index:99;font-size:14px;box-shadow:0 6px 18px rgba(0,0,0,.3)';
+  document.body.appendChild(t);setTimeout(()=>t.remove(),1900);}
+function needAuth(){if(CLOUD&&!currentUser){toast('Vui lòng đăng nhập (tab Tài khoản) để thêm/sửa');go('taikhoan');return true;}return false;}
+function fmtDate(s){if(!s)return'';const dt=new Date(s);return dt.getDate()+'/'+(dt.getMonth()+1)+'/'+dt.getFullYear();}
+function isoDay(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function avatarTag(m){return m.avatar?`<img class="av" src="${m.avatar}" alt="">`:`<div class="av">${m.gender==='Nữ'?'👩':'👨'}</div>`;}
+function genOf(m){let d=1,cur=m,seen=new Set();
+  while(cur&&cur.parentId&&!seen.has(cur.id)){seen.add(cur.id);const p=members.find(x=>x.id===cur.parentId);if(!p)break;cur=p;d++;}
+  return d;}
+function maxGen(){return members.reduce((a,m)=>Math.max(a,genOf(m)),0);}
+function resizeImage(file,cb){const r=new FileReader();
+  r.onload=e=>{const img=new Image();
+    img.onload=()=>{const max=240,sc=Math.min(1,max/Math.max(img.width,img.height));
+      const cw=Math.round(img.width*sc),ch=Math.round(img.height*sc);
+      const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+      cv.getContext('2d').drawImage(img,0,0,cw,ch);cb(cv.toDataURL('image/jpeg',0.82));};
+    img.src=e.target.result;};r.readAsDataURL(file);}
+
+/* ---------- kiểm tra dữ liệu & toàn vẹn ---------- */
+function validYear(v){if(!v)return true;return /^\d{3,4}$/.test(v)&&+v>=1&&+v<=(new Date().getFullYear()+1);}
+function createsCycle(meId,parentId){let cur=members.find(x=>x.id===parentId),seen=new Set();
+  while(cur&&!seen.has(cur.id)){if(cur.id===meId)return true;seen.add(cur.id);cur=members.find(x=>x.id===cur.parentId);}return false;}
+
+/* ---------- Hoàn tác (Undo) ---------- */
+function snapshot(){undoStack.push({m:JSON.stringify(members),e:JSON.stringify(events)});if(undoStack.length>30)undoStack.shift();}
+async function undo(){if(needAuth())return;if(!undoStack.length){toast('Không có gì để hoàn tác');return;}
+  const s=undoStack.pop();members=JSON.parse(s.m);events=JSON.parse(s.e);
+  await Store.set('members',members);await Store.set('events',events);toast('Đã hoàn tác');render();}
+
+/* ---------- xuất GEDCOM (chuẩn gia phả quốc tế) ---------- */
+function buildGEDCOM(){
+  const idx=new Map();members.forEach((m,i)=>idx.set(m.id,'I'+(i+1)));
+  const fams=[];const famOf=new Map();const childFam=new Map();
+  // mỗi cha/mẹ có con -> 1 gia đình
+  const parents=[...new Set(members.filter(m=>m.parentId&&idx.has(m.parentId)).map(m=>m.parentId))];
+  parents.forEach((pid,i)=>{const fid='F'+(i+1);const p=members.find(x=>x.id===pid);
+    const sp=p&&p.spouseId?members.find(x=>x.id===p.spouseId):null;
+    const kids=members.filter(x=>x.parentId===pid);
+    fams.push({fid,husb:p&&p.gender!=='Nữ'?p.id:(sp?sp.id:p.id),wife:p&&p.gender==='Nữ'?p.id:(sp?sp.id:null),kids:kids.map(k=>k.id)});
+    famOf.set(pid,fid);if(sp)famOf.set(sp.id,fid);kids.forEach(k=>childFam.set(k.id,fid));});
+  let g='0 HEAD\n1 SOUR GiaPhaSo\n1 GEDC\n2 VERS 5.5.1\n2 FORM LINEAGE-LINKED\n1 CHAR UTF-8\n';
+  members.forEach(m=>{const I=idx.get(m.id);const parts=m.name.trim().split(/\s+/);const sur=parts[0]||'';const giv=parts.slice(1).join(' ');
+    g+=`0 @${I}@ INDI\n1 NAME ${giv} /${sur}/\n1 SEX ${m.gender==='Nữ'?'F':'M'}\n`;
+    if(m.birthYear)g+=`1 BIRT\n2 DATE ${m.birthYear}\n`;
+    if(m.deathYear)g+=`1 DEAT\n2 DATE ${m.deathYear}\n`;
+    if(childFam.has(m.id))g+=`1 FAMC @${childFam.get(m.id)}@\n`;
+    if(famOf.has(m.id))g+=`1 FAMS @${famOf.get(m.id)}@\n`;});
+  fams.forEach(f=>{g+=`0 @${f.fid}@ FAM\n`;if(f.husb)g+=`1 HUSB @${idx.get(f.husb)}@\n`;if(f.wife)g+=`1 WIFE @${idx.get(f.wife)}@\n`;
+    f.kids.forEach(k=>g+=`1 CHIL @${idx.get(k)}@\n`);});
+  g+='0 TRLR\n';return g;
+}
+function exportGEDCOM(){if(!members.length){toast('Chưa có thành viên');return;}
+  const blob=new Blob([buildGEDCOM()],{type:'text/plain;charset=utf-8'});const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='gia-pha.ged';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);toast('Đã xuất file GEDCOM');}
+
+/* ---------- âm lịch (GMT+7) ---------- */
+const TZ=7;
+const CAN=['Giáp','Ất','Bính','Đinh','Mậu','Kỷ','Canh','Tân','Nhâm','Quý'];
+const CHI=['Tý','Sửu','Dần','Mão','Thìn','Tỵ','Ngọ','Mùi','Thân','Dậu','Tuất','Hợi'];
+const canChi=y=>CAN[(y+6)%10]+' '+CHI[(y+8)%12];
+const LUNAR_FEST={'1-1':'Tết Nguyên Đán','15-1':'Rằm tháng Giêng (Nguyên Tiêu)','3-3':'Tết Hàn Thực',
+  '10-3':'Giỗ Tổ Hùng Vương','15-4':'Lễ Phật Đản','5-5':'Tết Đoan Ngọ','15-7':'Vu Lan – Rằm tháng Bảy',
+  '15-8':'Tết Trung Thu','9-9':'Tết Trùng Cửu','23-12':'Ông Công Ông Táo'};
+function _INT(d){return Math.floor(d);}
+function jdFromDate(dd,mm,yy){var a=_INT((14-mm)/12),y=yy+4800-a,m=mm+12*a-3;
+  var jd=dd+_INT((153*m+2)/5)+365*y+_INT(y/4)-_INT(y/100)+_INT(y/400)-32045;
+  if(jd<2299161)jd=dd+_INT((153*m+2)/5)+365*y+_INT(y/4)-32083;return jd;}
+function getNewMoonDay(k,tz){var T=k/1236.85,T2=T*T,T3=T2*T,dr=Math.PI/180;
+  var J1=2415020.75933+29.53058868*k+0.0001178*T2-0.000000155*T3;
+  J1=J1+0.00033*Math.sin((166.56+132.87*T-0.009173*T2)*dr);
+  var M=359.2242+29.10535608*k-0.0000333*T2-0.00000347*T3;
+  var Mpr=306.0253+385.81691806*k+0.0107306*T2+0.00001236*T3;
+  var F=21.2964+390.67050646*k-0.0016528*T2-0.00000239*T3;
+  var C1=(0.1734-0.000393*T)*Math.sin(M*dr)+0.0021*Math.sin(2*dr*M);
+  C1=C1-0.4068*Math.sin(Mpr*dr)+0.0161*Math.sin(dr*2*Mpr);C1=C1-0.0004*Math.sin(dr*3*Mpr);
+  C1=C1+0.0104*Math.sin(dr*2*F)-0.0051*Math.sin(dr*(M+Mpr));
+  C1=C1-0.0074*Math.sin(dr*(M-Mpr))+0.0004*Math.sin(dr*(2*F+M));
+  C1=C1-0.0004*Math.sin(dr*(2*F-M))-0.0006*Math.sin(dr*(2*F+Mpr));
+  C1=C1+0.0010*Math.sin(dr*(2*F-Mpr))+0.0005*Math.sin(dr*(2*Mpr+M));
+  var dt;if(T<-11)dt=0.001+0.000839*T+0.0002261*T2-0.00000845*T3-0.000000081*T*T3;
+  else dt=-0.000278+0.000265*T+0.000262*T2;return _INT(J1+C1-dt+0.5+tz/24);}
+function getSunLongitude(jdn,tz){var T=(jdn-2451545.5-tz/24)/36525,T2=T*T,dr=Math.PI/180;
+  var M=357.52910+35999.05030*T-0.0001559*T2-0.00000048*T*T2;
+  var L0=280.46645+36000.76983*T+0.0003032*T2;
+  var DL=(1.914600-0.004817*T-0.000014*T2)*Math.sin(dr*M);
+  DL=DL+(0.019993-0.000101*T)*Math.sin(dr*2*M)+0.000290*Math.sin(dr*3*M);
+  var L=(L0+DL)*dr;L=L-Math.PI*2*_INT(L/(Math.PI*2));return _INT(L/Math.PI*6);}
+function getLunarMonth11(yy,tz){var off=jdFromDate(31,12,yy)-2415021,k=_INT(off/29.530588853);
+  var nm=getNewMoonDay(k,tz);if(getSunLongitude(nm,tz)>=9)nm=getNewMoonDay(k-1,tz);return nm;}
+function getLeapMonthOffset(a11,tz){var k=_INT((a11-2415021.076998695)/29.530588853+0.5);
+  var last=0,i=1,arc=getSunLongitude(getNewMoonDay(k+i,tz),tz);
+  do{last=arc;i++;arc=getSunLongitude(getNewMoonDay(k+i,tz),tz);}while(arc!=last&&i<14);return i-1;}
+function convertSolar2Lunar(dd,mm,yy,tz){var dn=jdFromDate(dd,mm,yy),k=_INT((dn-2415021.076998695)/29.530588853);
+  var ms=getNewMoonDay(k+1,tz);if(ms>dn)ms=getNewMoonDay(k,tz);
+  var a11=getLunarMonth11(yy,tz),b11=a11,ly;
+  if(a11>=ms){ly=yy;a11=getLunarMonth11(yy-1,tz);}else{ly=yy+1;b11=getLunarMonth11(yy+1,tz);}
+  var ld=dn-ms+1,diff=_INT((ms-a11)/29),leap=0,lm=diff+11;
+  if(b11-a11>365){var lo=getLeapMonthOffset(a11,tz);if(diff>=lo){lm=diff+10;if(diff==lo)leap=1;}}
+  if(lm>12)lm-=12;if(lm>=11&&diff<4)ly-=1;return [ld,lm,ly,leap];}
+function lunarOf(iso){const d=new Date(iso),r=convertSolar2Lunar(d.getDate(),d.getMonth()+1,d.getFullYear(),TZ);return {d:r[0],m:r[1],y:r[2],leap:r[3]};}
+function upcomingLunar(days){const out=[],base=new Date();
+  for(let i=0;i<days;i++){const d=new Date(base);d.setDate(base.getDate()+i);
+    const r=convertSolar2Lunar(d.getDate(),d.getMonth()+1,d.getFullYear(),TZ);
+    const fest=LUNAR_FEST[r[0]+'-'+r[1]];let label=null,type='';
+    if(fest){label=fest;type='fest';}else if(r[0]===15){label='Ngày Rằm tháng '+r[1];type='ram';}
+    else if(r[0]===1){label='Mùng 1 tháng '+r[1];type='mung';}
+    if(label)out.push({date:d,ld:r[0],lm:r[1],ly:r[2],leap:r[3],label,type});}
+  return out;}
+/* ngày giỗ sắp tới: quét tới trước để tìm lần kế tiếp */
+function upcomingGio(daysAhead){
+  const out=[],base=new Date();base.setHours(0,0,0,0);
+  members.forEach(m=>{
+    if(!m.gioDay||!m.gioMonth)return;
+    let found=null;
+    if(m.gioType==='duong'){
+      for(let y=0;y<2;y++){const d=new Date(base.getFullYear()+y,m.gioMonth-1,m.gioDay);
+        if(d>=base){found=d;break;}}
+    }else{
+      for(let i=0;i<420;i++){const d=new Date(base);d.setDate(base.getDate()+i);
+        const l=convertSolar2Lunar(d.getDate(),d.getMonth()+1,d.getFullYear(),TZ);
+        if(l[0]===m.gioDay&&l[1]===m.gioMonth){found=d;break;}}
+    }
+    if(found){const diff=(found-base)/86400000;if(diff<=daysAhead)out.push({member:m,date:found});}
+  });
+  return out.sort((a,b)=>a.date-b.date);
+}
+
+/* ---------- init ---------- */
+async function loadSession(){if(!CLOUD)return;try{const {data}=await sb.auth.getSession();const u=data&&data.session&&data.session.user;
+  currentUser=u?{username:u.email,name:(u.user_metadata&&u.user_metadata.name)||u.email}:null;}catch(e){}}
+async function reloadData(){members=await Store.get('members',[]);events=await Store.get('events',[]);
+  const ph=await Store.get('phaky',{});phaky={...DEFAULT_PHAKY,...(ph&&typeof ph==='object'?ph:{})};}
+async function init(){
+  if(CLOUD){
+    await loadSession();
+    sb.auth.onAuthStateChange((_e,session)=>{const u=session&&session.user;
+      currentUser=u?{username:u.email,name:(u.user_metadata&&u.user_metadata.name)||u.email}:null;render();});
+    try{sb.channel('app_data_rt').on('postgres_changes',{event:'*',schema:'public',table:'app_data'},
+      async()=>{await reloadData();render();}).subscribe();}catch(e){}
+  }else{
+    accounts=await Store.get('accounts',[]);currentUser=await Store.get('currentUser',null);
+  }
+  await reloadData();
+  renderTabs();render();
+}
+const TABS=[{id:'giapha',ic:'🌳',lb:'Gia phả'},{id:'sukien',ic:'📅',lb:'Sự kiện'},
+  {id:'thanhvien',ic:'👥',lb:'Thành viên'},{id:'phaky',ic:'📜',lb:'Phả ký'},{id:'congdong',ic:'🏛️',lb:'Cộng đồng'},{id:'taikhoan',ic:'👤',lb:'Tài khoản'}];
+function renderTabs(){$('tabbar').innerHTML=TABS.map(t=>`<button class="${tab===t.id?'on':''}" onclick="go('${t.id}')"><span class="ti">${t.ic}</span>${t.lb}</button>`).join('');}
+function go(t){tab=t;renderTabs();render();window.scrollTo(0,0);}
+function onFab(){tab==='sukien'?openEventForm():openMemberForm();}
+function render(){const v=$('view');
+  if(tab==='giapha')v.innerHTML=viewGiaPha();
+  else if(tab==='sukien')v.innerHTML=viewSuKien();
+  else if(tab==='thanhvien')v.innerHTML=viewThanhVien();
+  else if(tab==='phaky')v.innerHTML=viewPhaKy();
+  else if(tab==='congdong')v.innerHTML=viewCongDong();
+  else if(tab==='taikhoan')v.innerHTML=viewTaiKhoan();}
+
+/* ---------- GIA PHA ---------- */
+function buildGroupedTree(){
+  const rendered=new Set();let maxLvl=0;
+  function node(m,lvl){
+    if(rendered.has(m.id))return '';rendered.add(m.id);if(lvl>maxLvl)maxLvl=lvl;
+    const spouse=m.spouseId?members.find(x=>x.id===m.spouseId):null;
+    if(spouse)rendered.add(spouse.id);
+    const kids=members.filter(x=>(x.parentId===m.id||(spouse&&x.parentId===spouse.id))&&!rendered.has(x.id));
+    const kidHTML=kids.map(k=>node(k,lvl+1)).filter(Boolean).join('');
+    const hasKids=kidHTML.length>0,collapsed=collapsedNodes.has(m.id);
+    const yrs=[m.birthYear,m.deathYear].filter(Boolean).join('–');
+    const sy=spouse?[spouse.birthYear,spouse.deathYear].filter(Boolean).join('–'):'';
+    const spHTML=spouse?`<span class="spouse">⚭ ${esc(spouse.name)}${sy?` (${sy})`:''}</span>`:'';
+    const caret=hasKids?`<button class="caret-btn" title="Thu gọn/mở" onclick="toggleNode('${m.id}')">${collapsed?'▸':'▾'}</button>`:`<span class="caret-sp"></span>`;
+    const kcount=hasKids&&collapsed?` <span class="kcount">(${kids.length} con)</span>`:'';
+    return `<li>
+      <div class="node-row ${m.deathYear?'deceased':''}">
+        ${caret}${avatarTag(m)}
+        <div class="ninfo"><div class="nm">${esc(m.name)}<span class="doi">đời ${lvl}</span>${kcount}</div>
+          <div class="meta">${yrs||'—'}${spHTML}</div></div>
+        <span class="nacts">
+          <button class="icon-btn" title="Thêm con" onclick="openMemberForm(null,'${m.id}')">➕</button>
+          <button class="icon-btn" title="Sửa" onclick="openMemberForm('${m.id}')">✏️</button>
+          <button class="icon-btn danger" title="Xoá" onclick="delMember('${m.id}')">🗑️</button>
+        </span></div>
+      ${hasKids&&!collapsed?`<ul>${kidHTML}</ul>`:''}</li>`;
+  }
+  const rootList=members.filter(m=>!m.parentId||!members.some(x=>x.id===m.parentId));
+  const groups=[],gmap={};
+  function add(m){if(rendered.has(m.id))return;const h=node(m,1);if(!h)return;
+    const key=m.branch||'__manual__';
+    if(!gmap[key]){gmap[key]={key,label:m.branch||'Thành viên tự thêm',items:0,html:''};groups.push(gmap[key]);}
+    gmap[key].html+=h;gmap[key].items++;}
+  rootList.forEach(add);members.forEach(m=>{if(!rendered.has(m.id))add(m);});
+  return {groups,levels:maxLvl};
+}
+function renderGroupedTree(){
+  const {groups}=buildGroupedTree();
+  const multi=groups.length>1;
+  return groups.map(g=>{
+    const col=collapsedGroups.has(g.key);
+    return `<div class="grp">
+      <div class="grp-h" onclick="toggleGroup('${encodeURIComponent(g.key)}')">
+        <span class="caret">${col?'▸':'▾'}</span><span class="grp-t">${esc(g.label)}</span><span class="grp-n">${g.items} gia đình</span></div>
+      ${col?'':`<ul class="tree-root">${g.html}</ul>`}
+    </div>`;
+  }).join('');
+}
+function toggleGroup(k){k=decodeURIComponent(k);collapsedGroups.has(k)?collapsedGroups.delete(k):collapsedGroups.add(k);render();}
+function toggleNode(id){collapsedNodes.has(id)?collapsedNodes.delete(id):collapsedNodes.add(id);render();}
+function collapseAll(){members.forEach(m=>{if(members.some(x=>x.parentId===m.id))collapsedNodes.add(m.id);});render();}
+function expandAll(){collapsedNodes.clear();collapsedGroups.clear();render();}
+let chartZoom=1;
+function zoomChart(d){chartZoom=Math.max(0.4,Math.min(1.6,Math.round((chartZoom+d)*10)/10));render();}
+function isHead(m){
+  if(m.parentId&&members.some(x=>x.id===m.parentId))return false;
+  if(m.spouseId){const sp=members.find(x=>x.id===m.spouseId);
+    if(sp){if(sp.parentId&&members.some(x=>x.id===sp.parentId))return false;
+      if(m.gender==='Nam'&&sp.gender!=='Nam')return true;
+      if(sp.gender==='Nam'&&m.gender!=='Nam')return false;
+      return members.indexOf(m)<members.indexOf(sp);}}
+  return true;
+}
+function renderChart(){
+  const heads=members.filter(isHead);
+  const groups=[],gmap={};
+  heads.forEach(m=>{const key=m.branch||'__manual__';
+    if(!gmap[key]){gmap[key]={key,label:m.branch||'Gia phả',roots:[]};groups.push(gmap[key]);}
+    gmap[key].roots.push(m);});
+  const rendered=new Set();
+  function box(m,lvl){const spouse=m.spouseId?members.find(x=>x.id===m.spouseId):null;
+    const yrs=[m.birthYear,m.deathYear].filter(Boolean).join('–');
+    return `<div class="obox ${m.deathYear?'dead':''}" onclick="openMemberForm('${m.id}')">
+      <div class="ob-n">${esc(m.name)}</div>
+      ${spouse?`<div class="ob-s">⚭ ${esc(spouse.name)}</div>`:''}
+      <div class="ob-d">đời ${lvl}${yrs?' · '+yrs:''}</div></div>`;}
+  function node(m,lvl){if(rendered.has(m.id))return '';rendered.add(m.id);
+    const spouse=m.spouseId?members.find(x=>x.id===m.spouseId):null;if(spouse)rendered.add(spouse.id);
+    const kids=members.filter(x=>(x.parentId===m.id||(spouse&&x.parentId===spouse.id))&&!rendered.has(x.id));
+    const kidHTML=kids.map(k=>node(k,lvl+1)).filter(Boolean).join('');
+    return `<li>${box(m,lvl)}${kidHTML?`<ul>${kidHTML}</ul>`:''}</li>`;}
+  return groups.map(g=>{
+    const inner=g.roots.map(r=>node(r,1)).filter(Boolean).join('');
+    return `<div class="chart-block">
+      <div class="chart-title">${esc(g.label)} <span style="font-weight:600;color:var(--ink-soft);font-size:13px">· ${g.roots.length} gia đình</span></div>
+      <div class="chart-scroll"><div class="chart" style="transform:scale(${chartZoom})">
+        <div class="orgtree"><ul><li><div class="obox root"><div class="ob-n">${esc(g.label)}</div></div>${inner?`<ul>${inner}</ul>`:''}</li></ul></div>
+      </div></div></div>`;
+  }).join('');
+}
+function viewGiaPha(){
+  const lvls=members.length?maxGen():0;
+  const chart=members.length?renderChart():`<div class="empty"><div class="ico">🌱</div>
+    <div class="big">Chưa có thành viên nào</div><div>Nhấn [+ Thêm thành viên] để bắt đầu</div></div>`;
+  return `
+  <div class="stats">
+    <div class="stat"><div class="num">${members.length}</div><div class="lbl">Thành viên</div></div>
+    <div class="stat"><div class="num">${lvls}</div><div class="lbl">Đời (thế hệ)</div></div>
+    <div class="stat"><div class="num">${events.length}</div><div class="lbl">Sự kiện</div></div>
+  </div>
+  <div class="toolbar">
+    ${members.length?`<button class="pill" onclick="zoomChart(-0.1)">➖</button><span class="pill" style="cursor:default">${Math.round(chartZoom*100)}%</span><button class="pill" onclick="zoomChart(0.1)">➕</button>`:''}
+    ${members.length?`<button class="pill" onclick="exportPDF()">📄 PDF</button><button class="pill" onclick="exportGEDCOM()">🌐 GEDCOM</button>`:''}
+    ${undoStack.length?`<button class="pill" onclick="undo()">↩️ Hoàn tác</button>`:''}
+    ${doi11Imported()?`<button class="pill" onclick="removeDoi11()">🗑️ Xoá dữ liệu nhập</button>`:`<button class="pill" onclick="importDoi11()">📥 Nhập gia phả</button>`}
+  </div>
+  <div class="section-title">Phả đồ (sơ đồ cây) — chạm vào ô để sửa</div>
+  ${chart}`;
+}
+
+/* ---------- PDF ---------- */
+async function exportPDF(){
+  if(!members.length){toast('Chưa có thành viên để xuất');return;}
+  if(!window.jspdf||!window.html2canvas){toast('Không tải được thư viện PDF (kiểm tra mạng)');return;}
+  toast('Đang tạo PDF...');
+  const mx=maxGen();let rows='';
+  for(let g=1;g<=mx;g++){
+    const list=members.filter(m=>genOf(m)===g);if(!list.length)continue;
+    rows+=`<div style="margin-bottom:16px"><div style="color:#c9981f;font-weight:700;text-transform:uppercase;letter-spacing:1px;font-size:13px;border-bottom:1px solid #efe1c9;padding-bottom:4px;margin-bottom:8px">Đời thứ ${g}</div>`;
+    rows+=list.map(m=>{
+      const sp=m.spouseId?members.find(x=>x.id===m.spouseId):null;
+      return `<div style="display:flex;gap:12px;align-items:flex-start;padding:8px 0;border-bottom:1px dashed #f0e4d0">
+        <div style="width:46px;height:46px;border-radius:50%;overflow:hidden;flex:none;background:#f6ead9;display:flex;align-items:center;justify-content:center;font-size:22px">
+          ${m.avatar?`<img src="${m.avatar}" style="width:100%;height:100%;object-fit:cover">`:(m.gender==='Nữ'?'👩':'👨')}</div>
+        <div style="flex:1">
+          <div style="font-weight:700;color:#8a1818;font-size:16px">${esc(m.name)} ${[m.birthYear,m.deathYear].filter(Boolean).length?`<span style="color:#8a6a4a;font-weight:400;font-size:13px">(${[m.birthYear,m.deathYear].filter(Boolean).join(' – ')})</span>`:''}</div>
+          ${sp?`<div style="color:#8a6a4a;font-size:13px">⚭ ${esc(sp.name)}</div>`:''}
+          <div style="color:#5a3a22;font-size:13px;margin-top:2px">${[m.occupation,m.hometown].filter(Boolean).map(esc).join(' · ')}</div>
+          ${m.phone?`<div style="color:#8a6a4a;font-size:12px">ĐT: ${esc(m.phone)}</div>`:''}
+          ${m.gioDay?`<div style="color:#8a6a4a;font-size:12px">Ngày giỗ: ${m.gioDay}/${m.gioMonth} ${m.gioType==='duong'?'dương lịch':'âm lịch'}</div>`:''}
+          ${m.notes?`<div style="color:#8a6a4a;font-size:12px;font-style:italic;margin-top:2px">${esc(m.notes)}</div>`:''}
+        </div></div>`;}).join('');
+    rows+=`</div>`;
+  }
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;left:-99999px;top:0;width:760px;background:#fff;padding:40px;font-family:Arial,sans-serif';
+  el.innerHTML=`<div style="text-align:center;margin-bottom:6px"><div style="font-size:34px">🌳</div>
+    <h1 style="color:#8a1818;margin:4px 0;font-size:26px">Gia Phả Số</h1>
+    <p style="color:#8a6a4a;font-style:italic;margin:0">Kết nối tình thân – Giữ gìn nguồn cội</p>
+    <p style="color:#b89a6f;font-size:12px;margin:4px 0 0">${members.length} thành viên · ${mx} đời · Xuất ngày ${new Date().toLocaleDateString('vi-VN')}</p></div>
+    <hr style="border:none;border-top:2px solid #c9981f;margin:16px 0">${rows}`;
+  document.body.appendChild(el);
+  try{const canvas=await html2canvas(el,{scale:2,backgroundColor:'#ffffff'});
+    const {jsPDF}=window.jspdf;const pdf=new jsPDF('p','mm','a4');
+    const pw=210,ph=297,imgH=canvas.height*pw/canvas.width,imgData=canvas.toDataURL('image/jpeg',0.92);
+    let heightLeft=imgH,pos=0;pdf.addImage(imgData,'JPEG',0,pos,pw,imgH);heightLeft-=ph;
+    while(heightLeft>0){pos-=ph;pdf.addPage();pdf.addImage(imgData,'JPEG',0,pos,pw,imgH);heightLeft-=ph;}
+    pdf.save('gia-pha-so.pdf');toast('Đã xuất PDF');}catch(e){toast('Lỗi khi tạo PDF');}
+  el.remove();
+}
+
+/* ---------- SU KIEN ---------- */
+function viewSuKien(){
+  const now=new Date();
+  const hh=String(now.getHours()).padStart(2,'0'),mm=String(now.getMinutes()).padStart(2,'0');
+  const dows=['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
+  const dstr=`${dows[now.getDay()]}, ${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`;
+  const tl=lunarOf(isoDay(now));
+  const lstr=`Âm lịch ${tl.d}/${tl.m}${tl.leap?' (nhuận)':''} · năm ${canChi(tl.y)}`;
+  const y=calRef.getFullYear(),mo=calRef.getMonth();
+  const first=new Date(y,mo,1).getDay(),daysIn=new Date(y,mo+1,0).getDate(),prevDays=new Date(y,mo,0).getDate();
+  const dow=['CN','T2','T3','T4','T5','T6','T7'],todayStr=isoDay(now);
+  const gioSet=new Set(upcomingGio(366).map(x=>isoDay(x.date)));
+  let cells='';
+  for(let i=0;i<first;i++)cells+=`<div class="day out">${prevDays-first+1+i}</div>`;
+  for(let d=1;d<=daysIn;d++){
+    const iso=`${y}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const has=events.some(e=>e.date===iso)||gioSet.has(iso);
+    const l=lunarOf(iso),fest=LUNAR_FEST[l.d+'-'+l.m];
+    const special=fest?'fest':(l.d===15?'ram':(l.d===1?'mung1':''));
+    const gio=gioSet.has(iso)?'gio':'';
+    const ldText=(l.d===1)?(l.d+'/'+l.m):l.d;
+    const cls=['day',iso===todayStr?'today':'',has?'has':'',iso===calSel?'sel':'',special,gio].filter(Boolean).join(' ');
+    cells+=`<div class="${cls}" onclick="selDay('${iso}')"${fest?` title="${esc(fest)}"`:''}><span class="sd">${d}</span><span class="ld">${ldText}</span></div>`;
+  }
+  const rest=(7-(first+daysIn)%7)%7;for(let i=1;i<=rest;i++)cells+=`<div class="day out">${i}</div>`;
+
+  const gioUp=upcomingGio(120);
+  const gioHtml=gioUp.length?gioUp.map(x=>{const l=lunarOf(isoDay(x.date));
+    return `<div class="ev" style="border-left-color:#6f1212">
+      <div class="when">${x.date.getDate()}/${x.date.getMonth()+1}<div style="color:var(--muted);font-weight:400;font-size:11px">ÂL ${l.d}/${l.m}</div></div>
+      <div style="flex:1"><div class="ttl">🕯️ Giỗ ${esc(x.member.name)}</div>
+        <div class="desc">${x.member.gioType==='duong'?'Giỗ tính theo dương lịch':'Giỗ '+x.member.gioDay+'/'+x.member.gioMonth+' âm lịch'}</div></div>
+      <span class="badge">Giỗ</span></div>`;}).join(''):`<p style="color:var(--ink-soft)">Không có ngày giỗ trong 120 ngày tới. Thêm "Ngày giỗ" trong hồ sơ thành viên để được nhắc.</p>`;
+
+  const lunarUp=upcomingLunar(75);
+  const lunarHtml=lunarUp.length?lunarUp.map(x=>`
+    <div class="ev" style="border-left-color:${x.type==='fest'?'var(--maroon)':(x.type==='ram'?'var(--gold)':'var(--ink-soft)')}">
+      <div class="when">${x.date.getDate()}/${x.date.getMonth()+1}<div style="color:var(--muted);font-weight:400;font-size:11px">ÂL ${x.ld}/${x.lm}</div></div>
+      <div style="flex:1"><div class="ttl">${esc(x.label)}</div></div>
+      <span class="badge">${x.type==='fest'?'Lễ':(x.type==='ram'?'Rằm':'Mùng 1')}</span></div>`).join(''):`<p style="color:var(--ink-soft)">Không có ngày đặc biệt sắp tới</p>`;
+
+  const todays=events.filter(e=>e.date===todayStr).sort((a,b)=>a.title.localeCompare(b.title));
+  const todayHtml=todays.length?todays.map(e=>eventCard(e)).join(''):`<p style="color:var(--ink-soft)">Không có sự kiện nào diễn ra hôm nay</p>`;
+  const in30=new Date(now);in30.setDate(in30.getDate()+30);
+  const upcoming=events.filter(e=>{const d=new Date(e.date);return d>=new Date(todayStr)&&d<=in30;}).sort((a,b)=>a.date.localeCompare(b.date));
+  const upHtml=upcoming.length?upcoming.map(e=>eventCard(e,true)).join(''):`<p style="color:var(--ink-soft)">Chưa có sự kiện sắp tới</p>`;
+
+  let selHtml='';
+  if(calSel){const sl=lunarOf(calSel),fest=LUNAR_FEST[sl.d+'-'+sl.m];
+    const list=events.filter(e=>e.date===calSel).sort((a,b)=>a.title.localeCompare(b.title));
+    selHtml=`<div class="section-title">${fmtDate(calSel)} · ÂL ${sl.d}/${sl.m}</div>
+      ${fest?`<p style="color:var(--maroon);font-weight:700;margin:0 2px 8px">🏮 ${esc(fest)}</p>`:''}
+      <button class="ghost" style="margin:0 0 12px" onclick="openEventForm('${calSel}')">+ Thêm sự kiện vào ngày này</button>
+      <div class="ev-list">${list.length?list.map(e=>eventCard(e)).join(''):'<p style="color:var(--ink-soft)">Chưa có sự kiện trong ngày này</p>'}</div>`;}
+  return `
+  <div class="clock"><div class="t">${hh}:${mm}</div><div class="d">${dstr}</div><div class="d lunar">${lstr}</div></div>
+  <div class="cal-head"><button class="nav-arrow" onclick="calMove(-1)">‹</button><h2>Tháng ${mo+1} / ${y}</h2><button class="nav-arrow" onclick="calMove(1)">›</button></div>
+  <div class="card" style="margin-bottom:10px"><div class="cal">${dow.map(d=>`<div class="dow">${d}</div>`).join('')}${cells}</div></div>
+  <div class="legend"><span><i class="dot mung"></i>Mùng 1</span><span><i class="dot ram"></i>Rằm</span><span><i class="dot fest"></i>Lễ ÂL</span><span><i class="dot gio"></i>Ngày giỗ</span><span>Số nhỏ = âm lịch</span></div>
+  ${selHtml}
+  <div class="section-title" style="margin-top:18px">🕯️ Ngày giỗ sắp tới</div>
+  <div class="ev-list">${gioHtml}</div>
+  <div class="section-title" style="margin-top:22px">Rằm, Mùng 1 &amp; Lễ âm lịch</div>
+  <div class="ev-list">${lunarHtml}</div>
+  <div class="section-title" style="margin-top:22px">Sự kiện hôm nay</div>
+  <div class="ev-list">${todayHtml}</div>
+  <div class="section-title" style="margin-top:22px">Sự kiện gia đình – 30 ngày tới</div>
+  <div class="ev-list">${upHtml}</div>`;
+}
+function eventCard(e,showUp){const up=showUp&&e.date>isoDay(new Date());const l=lunarOf(e.date);const fest=LUNAR_FEST[l.d+'-'+l.m];
+  return `<div class="ev"><div class="when">${fmtDate(e.date)}<div style="color:var(--muted);font-weight:400;font-size:11px">ÂL ${l.d}/${l.m}</div></div>
+    <div style="flex:1"><div class="ttl">${esc(e.title)} ${up?'<span class="badge">Sắp tới</span>':''}</div>
+      ${fest?`<div class="desc" style="color:var(--maroon)">🏮 Trùng ${esc(fest)}</div>`:''}
+      ${e.desc?`<div class="desc">${esc(e.desc)}</div>`:''}</div>
+    <div class="acts"><button class="icon-btn" onclick="openEventForm(null,'${e.id}')">✏️</button>
+      <button class="icon-btn danger" onclick="delEvent('${e.id}')">🗑️</button></div></div>`;}
+function calMove(n){calRef=new Date(calRef.getFullYear(),calRef.getMonth()+n,1);render();}
+function selDay(iso){calSel=(calSel===iso?null:iso);render();if(calSel)window.scrollTo({top:0,behavior:'smooth'});}
+
+/* ---------- THANH VIEN ---------- */
+function filteredMembers(){const q=memberSearch.trim().toLowerCase();
+  return members.filter(m=>!q||m.name.toLowerCase().includes(q)||(m.hometown||'').toLowerCase().includes(q)||(m.occupation||'').toLowerCase().includes(q));}
+function memberRows(list){return `<div class="mlist">`+list.map(m=>`
+  <div class="mrow">${avatarTag(m)}<div><div class="nm">${esc(m.name)} <span class="doi">đời ${m.gen||genOf(m)}</span></div>
+    <div class="meta">${[m.birthYear&&('Sinh '+m.birthYear),m.branch,m.occupation,m.hometown].filter(Boolean).join(' · ')||'—'}</div></div>
+    <div class="acts"><button class="icon-btn" onclick="openMemberForm('${m.id}')">✏️</button>
+    <button class="icon-btn danger" onclick="delMember('${m.id}')">🗑️</button></div></div>`).join('')+`</div>`;}
+function renderByDoi(){
+  const gens=[...new Set(members.map(m=>m.gen||genOf(m)))].sort((a,b)=>a-b);
+  return gens.map(g=>{
+    const list=members.filter(m=>(m.gen||genOf(m))===g).slice().sort((a,b)=>(a.branch||'~').localeCompare(b.branch||'~')||a.name.localeCompare(b.name));
+    const key='doi:'+g,col=collapsedGroups.has(key);
+    return `<div class="grp">
+      <div class="grp-h" onclick="toggleGroup('${encodeURIComponent(key)}')">
+        <span class="caret">${col?'▸':'▾'}</span><span class="grp-t">Đời thứ ${g}</span><span class="grp-n">${list.length} người</span></div>
+      ${col?'':memberRows(list)}
+    </div>`;
+  }).join('');
+}
+function memberBody(){
+  if(!members.length)return `<div class="empty"><div class="ico">👥</div><div class="big">Chưa có thành viên</div><div>Nhấn [+ Thêm thành viên] để thêm người đầu tiên</div></div>`;
+  if(memberSearch.trim()){const list=filteredMembers();return list.length?memberRows(list):`<div class="empty"><div class="ico">👥</div><div class="big">Không tìm thấy thành viên</div></div>`;}
+  const seg=`<div class="seg"><button class="${memberView==='phai'?'on':''}" onclick="memberView='phai';rerenderMembers()">Theo phái</button><button class="${memberView==='doi'?'on':''}" onclick="memberView='doi';rerenderMembers()">Theo đời</button></div>`;
+  if(memberView==='doi')return seg+renderByDoi();
+  return seg+`<div class="toolbar"><button class="pill" onclick="collapseAll()">⊟ Thu gọn</button><button class="pill" onclick="expandAll()">⊞ Mở tất cả</button></div>`+renderGroupedTree();
+}
+function viewThanhVien(){return `<div class="search"><span class="mag">🔍</span><input placeholder="Tìm kiếm thành viên..." value="${esc(memberSearch)}" oninput="memberSearch=this.value;rerenderMembers()"></div><div id="mbody">${memberBody()}</div>`;}
+function rerenderMembers(){const el=$('mbody');if(el)el.innerHTML=memberBody();}
+
+/* ---------- PHA KY ---------- */
+function chapBlock(key,title,icon){
+  const text=phaky[key]||'';
+  const paras=text.split(/\n\n+/).map(p=>`<p style="margin:0 0 11px;line-height:1.75;text-align:justify">${esc(p).replace(/\n/g,'<br>')}</p>`).join('');
+  return `<div class="card" style="margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <h3 style="color:var(--maroon);font-size:17px;flex:1">${icon} ${title}</h3>
+      <button class="icon-btn" onclick="editChapter('${key}')">✏️ Sửa</button></div>
+    ${paras||'<p style="color:var(--ink-soft)">(Chưa có nội dung)</p>'}</div>`;
+}
+function viewPhaKy(){
+  const rows=TOC_QUAN.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('');
+  return `
+  <div class="clan-banner"><h2>📜 Phả ký dòng họ</h2><p>Tộc Nguyễn Như – làng Câu Nhí, Điện Bàn</p></div>
+  ${chapBlock('tua','Lời tựa','📖')}
+  ${chapBlock('hinhThanh','Quá trình hình thành tộc Nguyễn Như','🌿')}
+  ${chapBlock('nhaTho','Quá trình xây dựng & trùng tu nhà thờ tộc','🏯')}
+  <div class="card" style="margin-bottom:14px">
+    <h3 style="color:var(--maroon);font-size:17px;margin-bottom:10px">🧧 Cách xưng hô khi tra lục</h3>
+    <div style="line-height:1.9;font-size:14px">
+      <b>Khảo</b>: con trai · <b>Cô</b>: con gái · <b>Tỷ</b>: con dâu (vợ) · <b>Tỷ kế</b>: vợ thứ.<br>
+      Con gọi cha: <b>Hiển khảo</b> – gọi mẹ: <b>Hiển tỷ</b>.<br>
+      Cháu gọi ông nội: <b>Hiển tổ khảo</b> – bà nội: <b>Hiển tổ tỷ</b>.<br>
+      Cháu gọi ông cố: <b>Tằng tổ khảo</b> – bà cố: <b>Tằng tổ tỷ</b>.<br>
+      Trên đời ông cố: <b>Cao tổ khảo – Cao tổ tỷ</b>.<br>
+      Trên đời ông cao: <b>Cao cao tổ</b>. Trên đời ông cao cao: <b>Tiên tổ</b>.<br>
+      Khi cúng, mỗi tộc đều có xưng quận. Ví dụ: “Phụng vì Hiển khảo Trần Lưu quận Nguyễn Văn A”; “Phụng vì Hiển tỷ Kinh Triệu quận Lê Thị B”.
+    </div></div>
+  <div class="card">
+    <h3 style="color:var(--maroon);font-size:17px;margin-bottom:10px">🏮 Bảng Tộc – Quận</h3>
+    <div style="overflow:auto"><table class="tq"><thead><tr><th>Tộc</th><th>Quận</th></tr></thead><tbody>${rows}</tbody></table></div>
+  </div>`;
+}
+function editChapter(key){if(needAuth())return;
+  const titles={tua:'Lời tựa',hinhThanh:'Quá trình hình thành tộc',nhaTho:'Nhà thờ tộc'};
+  openModal(`<h2>✏️ Sửa: ${titles[key]||''}</h2>
+    <textarea class="f" id="ck_text" style="min-height:320px">${esc(phaky[key]||'')}</textarea>
+    <p class="note">Ngăn cách các đoạn bằng một dòng trống.</p>
+    <button class="primary" onclick="saveChapter('${key}')">💾 Lưu</button>
+    <button class="ghost" onclick="closeModal()">Huỷ</button>`);
+}
+async function saveChapter(key){phaky[key]=$('ck_text').value;await Store.set('phaky',phaky);closeModal();toast('Đã lưu phả ký');render();}
+
+/* ---------- CONG DONG ---------- */
+function clanBody(){const q=clanSearch.trim().toLowerCase();const list=CLANS.filter(c=>!q||c.n.toLowerCase().includes(q));
+  if(!list.length)return `<div class="empty"><div class="ico">🔎</div><div class="big">Không tìm thấy tộc họ</div><div>Thử tìm: Nguyễn, Trần, Lê, Võ, Vũ...</div></div>`;
+  return `<div class="clan-grid">`+list.map(c=>`<div class="clan" onclick="showClan('${esc(c.n)}')"><div class="seal">${c.n[0]}</div><div class="cn">Tộc ${esc(c.n)}</div><div class="cm">${c.pct} dân số</div></div>`).join('')+`</div>`;}
+function viewCongDong(){return `<div class="clan-banner"><h2>Tìm tộc họ Việt Nam</h2><p>Tra cứu nguồn gốc các dòng họ – tộc Nguyễn, Trần, Lê, Võ, Vũ…</p></div>
+  <div class="search"><span class="mag">🔍</span><input placeholder="Tìm tộc họ (VD: Nguyễn, Võ, Vũ...)" value="${esc(clanSearch)}" oninput="clanSearch=this.value;rerenderClans()"></div><div id="clanbody">${clanBody()}</div>`;}
+function rerenderClans(){const el=$('clanbody');if(el)el.innerHTML=clanBody();}
+function showClan(name){const c=CLANS.find(x=>x.n===name);if(!c)return;
+  openModal(`<div style="text-align:center"><div class="seal" style="width:64px;height:64px;font-size:30px;margin:0 auto 10px">${c.n[0]}</div>
+    <h2 style="color:var(--maroon)">Tộc ${esc(c.n)}</h2><p style="color:var(--gold);font-weight:700;margin:4px 0">${c.pct} dân số Việt Nam</p>
+    <p style="color:var(--ink-soft);line-height:1.6;margin-top:10px">${esc(c.info)}</p></div><button class="ghost" onclick="closeModal()">Đóng</button>`);}
+
+/* ---------- TAI KHOAN ---------- */
+function viewTaiKhoan(){
+  let authHtml;
+  if(currentUser){
+    authHtml=`<div class="acct-card"><div class="profile"><div class="big-av">👤</div>
+      <h2 style="margin-top:6px">${esc(currentUser.name)}</h2><div class="sub">@${esc(currentUser.username)}</div></div>
+      <div style="display:flex;justify-content:space-around;margin:18px 0;text-align:center">
+        <div><div style="font-size:24px;font-weight:800;color:var(--maroon)">${members.length}</div><div class="sub" style="margin:0">Thành viên</div></div>
+        <div><div style="font-size:24px;font-weight:800;color:var(--maroon)">${events.length}</div><div class="sub" style="margin:0">Sự kiện</div></div></div>
+      <button class="primary" onclick="logout()">Đăng xuất</button></div>`;
+  }else{
+    const login=acctMode==='login';
+    authHtml=`<div class="acct-card"><h2>${login?'Đăng nhập':'Tạo tài khoản'}</h2><div class="sub">Quản lý gia phả của dòng họ bạn</div>
+      <div class="tabs"><button class="${login?'on':''}" onclick="acctMode='login';render()">Đăng nhập</button>
+      <button class="${!login?'on':''}" onclick="acctMode='register';render()">Tạo tài khoản</button></div>
+      ${!login?`<label>Họ và tên <span class="req">*</span></label><input class="f" id="ac_name" placeholder="Nguyễn Văn A">`:''}
+      <label>${CLOUD?'Email':'Tên đăng nhập'} <span class="req">*</span></label><input class="f" id="ac_user" type="${CLOUD?'email':'text'}" placeholder="${CLOUD?'email@vidu.com':'vidu123'}" autocomplete="username">
+      <label>Mật khẩu <span class="req">*</span></label><input class="f" id="ac_pass" type="password" placeholder="••••••" autocomplete="${login?'current-password':'new-password'}">
+      ${!login?`<label>Nhập lại mật khẩu <span class="req">*</span></label><input class="f" id="ac_pass2" type="password" placeholder="••••••">`:''}
+      <button class="primary" onclick="${login?'doLogin()':'doRegister()'}">${login?'Đăng nhập':'Tạo tài khoản'}</button>
+      <p class="note">${CLOUD?'Đăng nhập an toàn qua cloud – mọi người đăng nhập sẽ thấy chung một gia phả.':'Tài khoản lưu cục bộ trên thiết bị này (bản demo) – đừng dùng mật khẩu quan trọng.'}</p></div>`;
+  }
+  const backupHtml=`<div class="acct-card"><h2>Sao lưu &amp; khôi phục</h2>
+    <div class="sub">Tải toàn bộ dữ liệu về máy để phòng mất, hoặc nạp lại từ file đã lưu.</div>
+    <button class="primary" onclick="exportData()">⬇️ Xuất file sao lưu</button>
+    <button class="ghost" onclick="document.getElementById('importInput').click()">⬆️ Khôi phục từ file</button>
+    <input type="file" id="importInput" accept="application/json,.json" style="display:none" onchange="importData(this)">
+    <p class="note">File sao lưu gồm toàn bộ thành viên, sự kiện và tài khoản. ${CLOUD?'Dữ liệu đang lưu trên cloud (dùng chung cho cả họ).':'Nên xuất định kỳ vì dữ liệu đang lưu trên trình duyệt.'}</p></div>`;
+  return authHtml+backupHtml;
+}
+async function doRegister(){const name=$('ac_name').value.trim(),u=$('ac_user').value.trim(),p=$('ac_pass').value,p2=$('ac_pass2').value;
+  if(!name||!u||!p){toast('Vui lòng điền đủ thông tin');return;}
+  if(p.length<6){toast('Mật khẩu tối thiểu 6 ký tự');return;}
+  if(p!==p2){toast('Mật khẩu nhập lại không khớp');return;}
+  if(CLOUD){const {data,error}=await sb.auth.signUp({email:u,password:p,options:{data:{name}}});
+    if(error){toast(error.message);return;}
+    if(data&&data.session){await loadSession();await reloadData();toast('Tạo tài khoản thành công');render();}
+    else{toast('Đã gửi email xác nhận – kiểm tra hộp thư rồi đăng nhập');acctMode='login';render();}
+    return;}
+  if(accounts.some(a=>a.username.toLowerCase()===u.toLowerCase())){toast('Tên đăng nhập đã tồn tại');return;}
+  accounts.push({username:u,password:p,name});await Store.set('accounts',accounts);
+  currentUser={username:u,name};await Store.set('currentUser',currentUser);toast('Tạo tài khoản thành công');render();}
+async function doLogin(){const u=$('ac_user').value.trim(),p=$('ac_pass').value;
+  if(CLOUD){const {error}=await sb.auth.signInWithPassword({email:u,password:p});
+    if(error){toast('Sai email hoặc mật khẩu');return;}
+    await loadSession();await reloadData();toast('Đăng nhập thành công');render();return;}
+  const a=accounts.find(x=>x.username.toLowerCase()===u.toLowerCase()&&x.password===p);
+  if(!a){toast('Sai tên đăng nhập hoặc mật khẩu');return;}
+  currentUser={username:a.username,name:a.name};await Store.set('currentUser',currentUser);toast('Đăng nhập thành công');render();}
+async function logout(){if(CLOUD){try{await sb.auth.signOut();}catch(e){}currentUser=null;acctMode='login';render();return;}
+  currentUser=null;await Store.set('currentUser',null);acctMode='login';render();}
+
+/* ---------- BACKUP / RESTORE ---------- */
+function exportData(){
+  const data={app:'giaphaso',version:2,exportedAt:new Date().toISOString(),members,events,accounts};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a'),dt=new Date();
+  a.href=url;a.download=`gia-pha-backup-${dt.getFullYear()}${String(dt.getMonth()+1).padStart(2,'0')}${String(dt.getDate()).padStart(2,'0')}.json`;
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);toast('Đã xuất file sao lưu');
+}
+function importData(inp){const f=inp.files&&inp.files[0];if(!f)return;inp.value='';
+  const r=new FileReader();
+  r.onload=e=>{try{const d=JSON.parse(e.target.result);
+    if(!d||(!Array.isArray(d.members)&&!Array.isArray(d.events))){toast('File không hợp lệ');return;}
+    pendingImport=d;
+    openModal(`<h2 style="color:var(--maroon)">Khôi phục dữ liệu?</h2>
+      <p style="text-align:center;color:var(--ink-soft)">File có <b>${(d.members||[]).length}</b> thành viên, <b>${(d.events||[]).length}</b> sự kiện.<br>Dữ liệu hiện tại sẽ bị <b>thay thế</b>.</p>
+      <button class="primary" onclick="confirmImport()">Khôi phục</button><button class="ghost" onclick="pendingImport=null;closeModal()">Huỷ</button>`);
+  }catch(err){toast('Không đọc được file');}};
+  r.readAsText(f);
+}
+async function confirmImport(){if(needAuth())return;const d=pendingImport;if(!d)return;
+  snapshot();
+  members=Array.isArray(d.members)?d.members:[];events=Array.isArray(d.events)?d.events:[];
+  if(Array.isArray(d.accounts))accounts=d.accounts;
+  await Store.set('members',members);await Store.set('events',events);await Store.set('accounts',accounts);
+  pendingImport=null;closeModal();toast('Đã khôi phục dữ liệu');render();}
+
+/* ---------- MODAL ---------- */
+function openModal(html){$('modal-root').innerHTML=`<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`;}
+function closeModal(){$('modal-root').innerHTML='';}
+
+/* ---------- MEMBER FORM ---------- */
+function openMemberForm(id,presetParentId){
+  if(needAuth())return;
+  const m=id?members.find(x=>x.id===id):{};formAvatar=m.avatar||'';
+  const parentSel=presetParentId||m.parentId||'';
+  const others=members.filter(x=>x.id!==id);
+  const opt=(sel)=>others.map(o=>`<option value="${o.id}" ${sel===o.id?'selected':''}>${esc(o.name)}${o.birthYear?(' ('+o.birthYear+')'):''}</option>`).join('');
+  const D=m.gioDay||0,Mo=m.gioMonth||0,Ty=m.gioType||'am';
+  const days=Array.from({length:30},(_,i)=>`<option value="${i+1}" ${D===i+1?'selected':''}>${i+1}</option>`).join('');
+  const mons=Array.from({length:12},(_,i)=>`<option value="${i+1}" ${Mo===i+1?'selected':''}>Tháng ${i+1}</option>`).join('');
+  openModal(`
+    <h2>➕ ${id?'Sửa Thành Viên':'Thêm Thành Viên'}</h2>
+    <div class="pick-av" id="avBox" onclick="document.getElementById('avInput').click()">${formAvatar?`<img src="${formAvatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`:'👤'}</div>
+    <input type="file" id="avInput" accept="image/*" style="display:none" onchange="pickAvatar(this)">
+    <div class="pick-hint">Nhấn để chọn ảnh đại diện</div>
+    <label>Họ và tên <span class="req">*</span></label><input class="f" id="m_name" placeholder="Nguyễn Văn A" value="${esc(m.name||'')}">
+    <div class="row2"><div><label>Năm sinh</label><input class="f" id="m_by" placeholder="1950" value="${esc(m.birthYear||'')}"></div>
+      <div><label>Năm mất</label><input class="f" id="m_dy" placeholder="(nếu có)" value="${esc(m.deathYear||'')}"></div></div>
+    <label>Giới tính</label><select class="f" id="m_gender"><option ${m.gender==='Nam'?'selected':''}>Nam</option><option ${m.gender==='Nữ'?'selected':''}>Nữ</option></select>
+    <label>Cha/Mẹ (người đời trên)</label>
+    <select class="f" id="m_parent"><option value="">— Không (gốc gia phả) —</option>${opt(parentSel)}</select>
+    <label>Vợ/Chồng</label>
+    <select class="f" id="m_spouse"><option value="">— Không —</option>${opt(m.spouseId||'')}</select>
+    <label>Số điện thoại</label><input class="f" id="m_phone" placeholder="0912345678" value="${esc(m.phone||'')}">
+    <label>Nghề nghiệp</label><input class="f" id="m_job" placeholder="Nông dân, Giáo viên..." value="${esc(m.occupation||'')}">
+    <label>Quê quán</label><input class="f" id="m_home" placeholder="Xã, huyện, tỉnh..." value="${esc(m.hometown||'')}">
+    <label>Ngày giỗ (để được nhắc tự động)</label>
+    <div class="row3">
+      <select class="f" id="m_gio_d"><option value="0">— Ngày —</option>${days}</select>
+      <select class="f" id="m_gio_m"><option value="0">— Tháng —</option>${mons}</select>
+      <select class="f" id="m_gio_t"><option value="am" ${Ty==='am'?'selected':''}>Âm lịch</option><option value="duong" ${Ty==='duong'?'selected':''}>Dương lịch</option></select>
+    </div>
+    <label>Ghi chú</label><textarea class="f" id="m_note" placeholder="Tiểu sử, đóng góp...">${esc(m.notes||'')}</textarea>
+    <button class="primary" onclick="saveMember('${id||''}')">💾 Lưu thành viên</button>
+    <button class="ghost" onclick="closeModal()">Huỷ</button>`);
+}
+function pickAvatar(inp){const f=inp.files&&inp.files[0];if(!f)return;
+  resizeImage(f,d=>{formAvatar=d;const b=$('avBox');if(b)b.innerHTML=`<img src="${d}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;});}
+async function saveMember(id){
+  const name=$('m_name').value.trim();if(!name){toast('Vui lòng nhập họ và tên');return;}
+  const by=$('m_by').value.trim(),dy=$('m_dy').value.trim();
+  if(!validYear(by)){toast('Năm sinh không hợp lệ');return;}
+  if(!validYear(dy)){toast('Năm mất không hợp lệ');return;}
+  if(by&&dy&&+dy<+by){toast('Năm mất phải sau năm sinh');return;}
+  let parentId=$('m_parent').value||'';const spouseId=$('m_spouse').value||'';
+  if(parentId&&parentId===id){toast('Không thể chọn chính mình làm cha/mẹ');parentId='';}
+  if(parentId&&id&&createsCycle(id,parentId)){toast('Quan hệ này tạo vòng lặp (chọn con/cháu làm cha/mẹ)');return;}
+  snapshot();
+  const data={name,birthYear:by,deathYear:dy,gender:$('m_gender').value,
+    parentId,spouseId,phone:$('m_phone').value.trim(),occupation:$('m_job').value.trim(),hometown:$('m_home').value.trim(),
+    gioDay:parseInt($('m_gio_d').value)||0,gioMonth:parseInt($('m_gio_m').value)||0,gioType:$('m_gio_t').value,
+    notes:$('m_note').value.trim(),avatar:formAvatar};
+  let mid=id;
+  if(id){const i=members.findIndex(x=>x.id===id);members[i]={...members[i],...data};}
+  else{mid=uid();members.push({id:mid,...data});}
+  // vợ/chồng hai chiều
+  if(spouseId){members.forEach(x=>{if(x.id!==mid&&x.spouseId===mid&&x.id!==spouseId)x.spouseId='';});
+    const sp=members.find(x=>x.id===spouseId);if(sp)sp.spouseId=mid;}
+  else{members.forEach(x=>{if(x.spouseId===mid)x.spouseId='';});}
+  await Store.set('members',members);closeModal();toast(id?'Đã cập nhật':'Đã thêm thành viên');render();
+}
+function delMember(id){if(needAuth())return;const m=members.find(x=>x.id===id);const kids=members.filter(x=>x.parentId===id).length;
+  openModal(`<h2 style="color:var(--maroon)">Xoá thành viên?</h2>
+    <p style="text-align:center;color:var(--ink-soft)">Xoá <b>${esc(m.name)}</b>?${kids?` <br><b>${kids}</b> người con sẽ trở thành gốc riêng.`:''} Không thể hoàn tác.</p>
+    <button class="primary" onclick="confirmDelMember('${id}')">Xoá</button><button class="ghost" onclick="closeModal()">Huỷ</button>`);}
+async function confirmDelMember(id){
+  snapshot();
+  members=members.filter(x=>x.id!==id);
+  members.forEach(x=>{if(x.parentId===id)x.parentId='';if(x.spouseId===id)x.spouseId='';});
+  await Store.set('members',members);closeModal();toast('Đã xoá thành viên');render();}
+
+/* ---------- Nhập gia phả nhiều đời (tộc Nguyễn Như) vào cây ---------- */
+function doi11Imported(){return members.some(m=>m.src==='doi11');}
+function noTone(s){return (s||'').normalize('NFD').replace(/[\u0300\u0301\u0303\u0309\u0323]/g,'').normalize('NFC').toLowerCase();}
+function gkey(name){return noTone((name||'').replace(/\(.*?\)/g,'').replace(/tức.*$/,'').trim().split(/\s+/).pop());}
+function gkeys(name){const ks=[];const base=(name||'').replace(/\(.*?\)/g,'').trim().split(/\s+/).pop();if(base)ks.push(noTone(base));(name.match(/\(([^)]+)\)/g)||[]).forEach(p=>{const t=p.replace(/[()]/g,'').replace(/^tức\s*/i,'').trim().split(/\s+/).pop();if(t)ks.push(noTone(t));});return [...new Set(ks)];}
+function wkey(name){return /quý nương$|^thị$|^thị quý nương$/i.test((name||'').trim())?'':gkey(name);}
+function buildImportMembers(){
+  const out=[],reg={};
+  const generic=n=>!n||/^(thị|thị quý nương)$/i.test((n||'').trim());
+  function regMale(branch,name,id){reg[branch]=reg[branch]||{};const rec={id,wife:''};gkeys(name).forEach(k=>{(reg[branch][k]=reg[branch][k]||[]).push(rec);});return rec;}
+  function findFather(branch,fName,mName){const b=reg[branch]||{};const c=b[gkey(fName)];const mk=wkey(mName);
+    if(c&&c.length){if(c.length===1)return c[0].id;const hit=mk&&c.find(x=>x.wife&&x.wife===mk);return (hit||c[0]).id;}
+    if(mk){for(const k in b){const f=b[k].find(x=>x.wife===mk);if(f)return f.id;}}
+    return null;}
+  function mkKids(kids,fid,branch,gen){let lastSon=null,lastRec=null;
+    kids.forEach(c=>{const role=c[0],name=c[1],ky=c[2],note=c[3];if(!name)return;
+      const rec={id:uid(),name,gender:role==='kh'?'Nam':'Nữ',src:'doi11',branch,gen};
+      if(ky){const p=String(ky).split('.');rec.gioDay=parseInt(p[0])||0;rec.gioMonth=parseInt(p[1])||0;rec.gioType='am';}
+      const notes=[];
+      if(role==='kh'||role==='co'){rec.parentId=fid;notes.push('Đời '+gen+' · '+branch);if(role==='kh'){lastSon=rec;lastRec=regMale(branch,name,rec.id);}}
+      else if(role==='ty'){if(lastSon){rec.spouseId=lastSon.id;if(!lastSon.spouseId)lastSon.spouseId=rec.id;}if(lastRec&&!lastRec.wife)lastRec.wife=wkey(name);notes.push('Con dâu');}
+      else{if(lastRec&&!lastRec.wife)lastRec.wife=wkey(name);notes.push('Vợ thứ'+(lastSon?' của '+lastSon.name:''));}
+      if(note)notes.push(note);rec.notes=notes.join(' · ');out.push(rec);});
+  }
+  DOI11.forEach(f=>{const fid=uid(),mid=uid();
+    out.push({id:fid,name:'Nguyễn Như '+f.f,gender:'Nam',spouseId:mid,src:'doi11',branch:f.s,gen:10,notes:'Đời 10 · '+f.s});
+    out.push({id:mid,name:f.m,gender:'Nữ',spouseId:fid,src:'doi11',branch:f.s,gen:10,notes:'Đời 10 · '+f.s});
+    const fr=regMale(f.s,f.f,fid);fr.wife=wkey(f.m);mkKids(f.k,fid,f.s,11);});
+  (typeof DOI12!=='undefined'?DOI12:[]).forEach(f=>{
+    let fid=findFather(f.s,f.f,f.m);
+    if(!fid){fid=uid();const fa={id:fid,name:'Nguyễn Như '+f.f,gender:'Nam',src:'doi11',branch:f.s,gen:11,notes:'Đời 11 · '+f.s+' · (chưa nối được đời trên)'};out.push(fa);
+      if(!generic(f.m)){const mm=uid();out.push({id:mm,name:f.m,gender:'Nữ',spouseId:fid,src:'doi11',branch:f.s,gen:11});fa.spouseId=mm;}
+      const fr=regMale(f.s,f.f,fid);fr.wife=wkey(f.m);}
+    else{const fa=out.find(x=>x.id===fid);if(fa&&!fa.spouseId&&!generic(f.m)){const mm=uid();out.push({id:mm,name:f.m,gender:'Nữ',spouseId:fid,src:'doi11',branch:f.s,gen:fa.gen});fa.spouseId=mm;}}
+    mkKids(f.k,fid,f.s,12);
+  });
+  return out;
+}
+function importDoi11(){if(needAuth())return;
+  openModal(`<h2 style="color:var(--maroon)">Nhập gia phả vào cây?</h2>
+    <p style="text-align:center;color:var(--ink-soft)">Nhập toàn bộ <b>Đời 10, 11, 12</b> của tộc Nguyễn Như – Câu Nhí: tự nối cha–con qua các đời, vợ/chồng và ngày giỗ (kỵ).</p>
+    <p class="note">Có thể bấm Hoàn tác hoặc "Xoá dữ liệu nhập" để gỡ ra sau.</p>
+    <button class="primary" onclick="confirmImportDoi11()">Nhập vào cây</button>
+    <button class="ghost" onclick="closeModal()">Huỷ</button>`);
+}
+async function confirmImportDoi11(){
+  snapshot();const add=buildImportMembers();
+  members=members.concat(add);await Store.set('members',members);
+  closeModal();toast('Đã nhập '+add.length+' người');render();
+}
+function removeDoi11(){if(needAuth())return;
+  openModal(`<h2 style="color:var(--maroon)">Xoá dữ liệu nhập?</h2>
+    <p style="text-align:center;color:var(--ink-soft)">Gỡ toàn bộ người đã nhập từ gia phả gốc (Đời 10–12) ra khỏi cây (không ảnh hưởng người bạn tự thêm).</p>
+    <button class="primary" onclick="confirmRemoveDoi11()">Xoá</button><button class="ghost" onclick="closeModal()">Huỷ</button>`);
+}
+async function confirmRemoveDoi11(){snapshot();members=members.filter(m=>m.src!=='doi11');await Store.set('members',members);closeModal();toast('Đã xoá dữ liệu Đời 11');render();}
+
+/* ---------- EVENT FORM ---------- */
+function openEventForm(presetDate,id){if(needAuth())return;const e=id?events.find(x=>x.id===id):{};const date=e.date||presetDate||isoDay(new Date());
+  openModal(`<h2>📅 ${id?'Sửa Sự Kiện':'Thêm Sự Kiện'}</h2>
+    <label>Tên sự kiện <span class="req">*</span></label><input class="f" id="e_title" placeholder="VD: Họp họ hàng năm" value="${esc(e.title||'')}">
+    <label>Ngày diễn ra <span class="req">*</span></label><input class="f" id="e_date" type="date" value="${date}">
+    <label>Mô tả</label><textarea class="f" id="e_desc" placeholder="Địa điểm, nội dung...">${esc(e.desc||'')}</textarea>
+    <button class="primary" onclick="saveEvent('${id||''}')">💾 Lưu sự kiện</button><button class="ghost" onclick="closeModal()">Huỷ</button>`);}
+async function saveEvent(id){const title=$('e_title').value.trim(),date=$('e_date').value,desc=$('e_desc').value.trim();
+  if(!title){toast('Vui lòng nhập tên sự kiện');return;}if(!date){toast('Vui lòng chọn ngày');return;}
+  snapshot();
+  if(id){const i=events.findIndex(x=>x.id===id);events[i]={...events[i],title,date,desc};}else events.push({id:uid(),title,date,desc});
+  await Store.set('events',events);closeModal();toast(id?'Đã cập nhật sự kiện':'Đã thêm sự kiện');render();}
+function delEvent(id){if(needAuth())return;const e=events.find(x=>x.id===id);
+  openModal(`<h2 style="color:var(--maroon)">Xoá sự kiện?</h2><p style="text-align:center;color:var(--ink-soft)">Xoá <b>${esc(e.title)}</b> (${fmtDate(e.date)})?</p>
+    <button class="primary" onclick="confirmDelEvent('${id}')">Xoá</button><button class="ghost" onclick="closeModal()">Huỷ</button>`);}
+async function confirmDelEvent(id){snapshot();events=events.filter(x=>x.id!==id);await Store.set('events',events);closeModal();toast('Đã xoá sự kiện');render();}
+
+setInterval(()=>{if(tab==='sukien'){const c=document.querySelector('.clock .t');
+  if(c){const n=new Date();c.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}}},30000);
+
+init();
+</script>
+</body>
+</html>
